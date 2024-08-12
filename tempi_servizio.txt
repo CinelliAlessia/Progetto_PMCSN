@@ -1,0 +1,7 @@
+Job 1: Arrivo = 0.06, Fine Servizio = 152.54
+Job 2: Arrivo = 17.86, Fine Servizio = 124.72
+Job 3: Arrivo = 81.57, Fine Servizio = 695.43
+Job 4: Arrivo = 141.06, Fine Servizio = 367.86
+Job 5: Arrivo = 143.64, Fine Servizio = 190.10
+Job 6: Arrivo = 229.52, Fine Servizio = 367.88
+Job 7: Arrivo = 265.79, Fine Servizio = 266.11

@@ -14,7 +14,7 @@
 # * ------------------------------------------------------------------------- 
 # */
 
-from rng import putSeed, random
+from discrete_event_simulation.rng import putSeed, random
 from math import log
 
 LAST = 10000                   # number of jobs processed */ 
