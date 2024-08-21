@@ -1,5 +1,10 @@
+from math import log
+from discrete_event_simulation.rng import random
 from discrete_event_simulation.rngs import putSeed
-from discrete_event_simulation.ssq4 import Exponential
+
+def expovariate(rate):
+    return -1 / rate * log(1 - random())
+
 
 # Parametri della simulazione
 TEMPO_SIMULAZIONE = 5 * 60  # 5 minuti in secondi
@@ -11,24 +16,29 @@ arrival_times = []
 service_end_times = []
 
 # Generazione dei tempi di arrivo e di fine servizio
-putSeed(42)
+putSeed(123456789)
 tempo_corrente = 0
-while tempo_corrente < TEMPO_SIMULAZIONE:
-    tempo_arrivo = Exponential(TASSO_ARRIVO)
-    tempo_corrente += tempo_arrivo
-    if tempo_corrente < TEMPO_SIMULAZIONE:
-        arrival_times.append(tempo_corrente)
+num_job = 0
+with open('tempi_arrivo.txt', 'w') as file:
+    while tempo_corrente < TEMPO_SIMULAZIONE:
+        tempo_arrivo = expovariate(TASSO_ARRIVO)
+        tempo_corrente += tempo_arrivo
+        if tempo_corrente < TEMPO_SIMULAZIONE:
+            file.write(f'{tempo_arrivo:.2f}\n')
+            num_job += 1
+
 
 # Prendi tutti i tempi di arrivo e calcola i tempi di fine servizio
 tempo_corrente = 0
-for tempo_arrivo in arrival_times:
-    tempo_servizio = Exponential(TASSO_SERVIZIO)
-    tempo_corrente = max(tempo_arrivo, tempo_corrente) + tempo_servizio
-    service_end_times.append(tempo_corrente)
-
-# Confronto dei tempi di arrivo e di fine servizio
 with open('tempi_servizio.txt', 'w') as file:
-    for i in range(len(arrival_times)):
+    for tempo_arrivo in range(num_job):
+        tempo_servizio = expovariate(TASSO_SERVIZIO)
+        file.write(f'{tempo_servizio:.2f}\n')
+
+i = 0
+# Confronto dei tempi di arrivo e di fine servizio
+with open('tempi.txt', 'w') as file:
+    for i in range(num_job):
         if i < len(service_end_times):
             file.write(f'Job {i+1}: Arrivo = {arrival_times[i]:.2f}, Fine Servizio = {service_end_times[i]:.2f}\n')
         else:

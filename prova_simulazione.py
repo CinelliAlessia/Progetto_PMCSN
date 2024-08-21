@@ -49,19 +49,6 @@ def prova_generatore():
     plt.scatter(x_coords, y_coords)
     plt.show()  # Don't forget to show the plot
 
-
-def ssq_prova():
-    tau = 5000
-    l = 0
-    t = 0.0
-    tc = tau + 1
-    ta = GetArrival()
-    while(ta < tau) or l > 0:
-        t = min(ta, tc)
-        if t == ta:
-            l += 1
-
-
 prova_generatore()
 
 
