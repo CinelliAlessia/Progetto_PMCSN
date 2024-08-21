@@ -1,11 +1,11 @@
-from libs.rngs import putSeed, getSeed
+from libs.rngs import putSeed, getSeed, plantSeeds, selectStream
 from libs.rvgs import Exponential
 
 
 # Parametri della simulazione
-TEMPO_SIMULAZIONE = 8* 60 * 60  # 8 ore
-TASSO_ARRIVO = 0.5 / 60  # 0.5 job al minuto
-TASSO_SERVIZIO = 1 / (9 * 60)  # 1 job ogni 9 minuti
+TEMPO_SIMULAZIONE = 8 * 60  # 8 ore
+TASSO_ARRIVO = 0.5   # 0.5 job al minuto
+TASSO_SERVIZIO = 1 / 9   # 1 job ogni 9 minuti
 
 
 def service_time(num_job):
@@ -40,9 +40,11 @@ def count_jobs():
 
 
 # Generazione dei tempi di arrivo e di fine servizio
-putSeed(565886215)
-num_job = count_jobs()
-seed_arrival_times = getSeed()
+plantSeeds(123456789)
+selectStream(0)
+arrival_time()
 
-putSeed(987654321)
+num_job = count_jobs()
+
+selectStream(1)
 service_time(num_job)
