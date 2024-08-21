@@ -1,18 +1,11 @@
-from math import log
-from discrete_event_simulation.rng import random
-from discrete_event_simulation.rngs import putSeed
-
-def expovariate(rate):
-    return -1 / rate * log(1 - random())
+from libs.rngs import putSeed, getSeed
+from libs.rvgs import Exponential
 
 
 # Parametri della simulazione
-TEMPO_SIMULAZIONE = 5 * 60  # 5 minuti in secondi
-TASSO_ARRIVO = 1 / 60  # 1 job al minuto
-TASSO_SERVIZIO = 1 / (3 * 60)  # 1 job ogni 3 minuti
-
-# Generazione dei tempi di arrivo e di fine servizio
-putSeed(123456789)
+TEMPO_SIMULAZIONE = 8* 60 * 60  # 8 ore
+TASSO_ARRIVO = 0.5 / 60  # 0.5 job al minuto
+TASSO_SERVIZIO = 1 / (9 * 60)  # 1 job ogni 9 minuti
 
 
 def service_time(num_job):
@@ -23,7 +16,7 @@ def service_time(num_job):
         file_arrivi.seek(0)
         with open('tempi_servizio.txt', 'w') as file:
             for i in range(num_job):
-                tempo_servizio = expovariate(TASSO_SERVIZIO)
+                tempo_servizio = Exponential(1/TASSO_SERVIZIO)
                 # somma alla riga i esima del file_arrivi
                 tempo_corrente += tempo_servizio + float(file_arrivi.readline())
                 print(f'{tempo_corrente:.2f}')
@@ -33,15 +26,23 @@ def service_time(num_job):
 def arrival_time():
     file_arrivi = open('tempi_arrivo.txt', 'w')
     tempo_corrente = 0
-    num_job = 0
     while tempo_corrente < TEMPO_SIMULAZIONE:
-        tempo_arrivo = expovariate(TASSO_ARRIVO)
+        tempo_arrivo = Exponential(1/TASSO_ARRIVO)
         tempo_corrente += tempo_arrivo
         if tempo_corrente < TEMPO_SIMULAZIONE:
             file_arrivi.write(f'{tempo_corrente:.2f}\n')
-            num_job += 1
     file_arrivi.close()
-    return num_job
 
-num_job = arrival_time()
+
+def count_jobs():
+    with open('tempi_arrivo.txt', 'r', newline="") as file:
+        return len(file.readlines())
+
+
+# Generazione dei tempi di arrivo e di fine servizio
+putSeed(565886215)
+num_job = count_jobs()
+seed_arrival_times = getSeed()
+
+putSeed(987654321)
 service_time(num_job)
