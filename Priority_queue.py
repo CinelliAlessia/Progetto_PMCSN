@@ -20,10 +20,6 @@ servers = [Server(i) for i in range(N)]  # Creazione dei serventi
 
 # ---------------------------------------------------------------------------------------
 
-# Inizializzazione del generatore di numeri casuali
-plantSeeds(SEED)
-
-
 def start():
     arrivals = []
     system_time = 0
@@ -37,6 +33,9 @@ def start():
 
         # Scelgo il cliente da servire
         serving_arrival_time, index_type = get_next(arrivals)
+        if serving_arrival_time is None:
+            break
+
         total_queue[index_type] += serve_client(serving_arrival_time, index_type)
 
         num_client_served[index_type] += 1  # Aggiorna il numero di clienti totali serviti
@@ -81,9 +80,13 @@ def get_next(array):
     for i in range(TYPE_CLIENT):
         if array[i] is not None and array[i] <= sys_time:
             return array[i], i
-    else:
-        min_time = min([a for a in array if a is not None])
-        return min_time, array.index(min_time)
+
+    non_none_array = [a for a in array if a is not None]
+    if not non_none_array:
+        return None, None
+
+    min_time = min(non_none_array)
+    return min_time, array.index(min_time)
 
 
 # Assegnazione del cliente a un server per servirlo
@@ -103,3 +106,12 @@ def serve_client(next_arrival, index_type):
 
 def get_min_last_time():
     return min([server.get_last_time() for server in servers])
+
+
+def main():
+    # Inizializzazione del generatore di numeri casuali
+    plantSeeds(SEED)
+    start()
+
+
+main()
