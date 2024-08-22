@@ -1,16 +1,17 @@
 from Server import Server
-from libs.rngs import putSeed, getSeed, plantSeeds, selectStream
+from libs.rngs import putSeed, getSeed, plantSeeds, selectStream, random
 from libs.rvgs import Exponential
 
 # Parametri della simulazione
 TEMPO_SIMULAZIONE = 8 * 60  # 8 ore
 TASSO_ARRIVO = 0.25
-TASSO_SERVIZIO = 0.75
-
+TASSO_SERVIZIO = 0.5
+PRIORITA_ALTA = 0.2
 NUM_SERVER = 2
 
 def processing_job(num_job):
     servers = [Server(i) for i in range(NUM_SERVER)]
+    total_queue_time = 0  # Variabile per il tempo totale in coda
 
     file_arrivi = open('tempi_arrivo.txt', 'r', newline="")
     file_arrivi.seek(0)
@@ -33,14 +34,21 @@ def processing_job(num_job):
             if do:
                 # Se tutti i server sono occupati, trova il server che si libera prima
                 server = min(servers, key=lambda s: s.get_current_time())
+                queue_time = server.get_current_time() - tempo_arrivo
+                total_queue_time += queue_time  # Aggiungi il tempo in coda
                 tempo_fine = server.process_job(server.get_current_time(), tempo_servizio)
                 print(f'Fine Servente {server.id}: {tempo_fine:.2f}')
                 do = False
+
+            # Calcola il tempo medio in coda
+            average_queue_time = total_queue_time / num_job
+            print(f'Tempo medio in coda: {average_queue_time:.2f}')
 
 def generate_arrival_time():
     file_arrivi = open('tempi_arrivo.txt', 'w')
     tempo_corrente = 0
     while tempo_corrente < TEMPO_SIMULAZIONE:
+        selectStream(0)
         tempo_arrivo = Exponential(1 / TASSO_ARRIVO)
         tempo_corrente += tempo_arrivo
         if tempo_corrente < TEMPO_SIMULAZIONE:
