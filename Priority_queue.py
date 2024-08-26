@@ -21,6 +21,7 @@ servers = [Server(i) for i in range(N)]  # Creazione dei serventi
 
 # ---------------------------------------------------------------------------------------
 
+
 def start():
     arrivals = []
     system_time = 0
