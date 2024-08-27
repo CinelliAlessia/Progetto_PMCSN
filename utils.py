@@ -29,6 +29,6 @@ class ComplEvent:
 
 class Area:
     def __init__(self):
-        self.customers = []  # "Area" of customers [unità di misura: (total customers) * time]
-        self.queue = []  # "Area" of queues [unità di misura: (customers in queue) * time]
-        self.service = []  # "Area" of service [unità di misura: (customers in service) * time]
+        self.customers = [0 for _ in range(QUEUES_NUM)]  # "Area" of customers [unità di misura: (total customers) * time]
+        self.queue = [0 for _ in range(QUEUES_NUM)]  # "Area" of queues [unità di misura: (customers in queue) * time]
+        self.service = [0 for _ in range(QUEUES_NUM)]  # "Area" of service [unità di misura: (customers in service) * time]
