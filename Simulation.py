@@ -1,6 +1,7 @@
 # Algoritmo 1 slide 9 per Next-Event Simulation
 from libs.rngs import selectStream, plantSeeds
-from libs.rvgs import Exponential
+from libs.rvgs import Exponential, Uniform
+from libs.rvms import cdfNormal, idfNormal
 from utils import *
 
 VERBOSE = True
@@ -18,6 +19,7 @@ num_client_in_service = [0 for _ in range(QUEUES_NUM)]  # Numero di clienti in s
 num_client_served = [0 for _ in range(QUEUES_NUM)]  # Numero di clienti serviti per ogni tipo
 queues = [[] for _ in range(QUEUES_NUM)]  # Una lista di eventi per ogni coda
 queues_state = [0 for _ in range(QUEUES_NUM)]  # Array binario: 0 = Empty, 1 = Not Empty
+
 
 # ---------------------------------------------------------------------------------------
 
@@ -81,7 +83,8 @@ def process_arrival(event):
         # ---------------- Assegna il cliente al server -----------------
         service_time = generate_service_time(event.client_type)  # Genero il tempo di servizio
 
-        event_list.completed[id_s_idle].event_time = event.event_time + service_time  # Aggiorno il tempo di completamento
+        event_list.completed[
+            id_s_idle].event_time = event.event_time + service_time  # Aggiorno il tempo di completamento
         event_list.completed[id_s_idle].client_type = event.client_type  # Aggiorno il tipo di cliente in servizio
 
         if VERBOSE: print(f"Client served immediately by free server {id_s_idle}: "
@@ -231,13 +234,15 @@ def print_final_stats():
     index = sum(num_client_served)
     print(f"for {index} jobs")
     # job-average statistics
-    print(f"   average interarrival time = {sum(times.last) / index:6.2f}") # Interarrival = Tempo tra due arrivi successivi
-    print(f"   average wait ............ = {sum(area.customers) / index:6.2f}") # Wait = Tempo di risposta = Tempo di attesa in coda + Tempo di servizio
-    print(f"   average delay ........... = {sum(area.queue) / index:6.2f}") # Delay = Tempo di attesa in coda
+    print(
+        f"   average interarrival time = {sum(times.last) / index:6.2f}")  # Interarrival = Tempo tra due arrivi successivi
+    print(
+        f"   average wait ............ = {sum(area.customers) / index:6.2f}")  # Wait = Tempo di risposta = Tempo di attesa in coda + Tempo di servizio
+    print(f"   average delay ........... = {sum(area.queue) / index:6.2f}")  # Delay = Tempo di attesa in coda
     print(f"   average service time .... = {sum(area.service) / index:6.2f}")
     # time-average statistics: Sono statistiche step wise perche sono popolazioni, incrementano e decrementano di uno
-    print(f"   average # in the node ... = {sum(area.customers) / times.current:6.2f}") # l(t)
-    print(f"   average # in the queue .. = {sum(area.queue) / times.current:6.2f}") # q(t)
+    print(f"   average # in the node ... = {sum(area.customers) / times.current:6.2f}")  # l(t)
+    print(f"   average # in the queue .. = {sum(area.queue) / times.current:6.2f}")  # q(t)
     print(f"   utilization ............. = {sum(area.service) / times.current:6.2f}")
     print(f"\nSimulation complete. Clients served: {num_client_served}")
     # x(t) = numero di job in servizio
@@ -268,8 +273,17 @@ def server_selection_equity():
                 min_completion_time = event_list.completed[i].event_time
                 selected_server = i
         else:
-            return i    # None -> non ha mai lavorato
+            return i  # None -> non ha mai lavorato
     return selected_server
 
 
 start()
+
+
+# Tronca la distribuzione normale tra inf e sup - Lezione 28-05 (numero 31)
+def truncate_normal(mu, sigma, inf, sup):
+    alpha = cdfNormal(inf, mu, sigma)
+    beta = 1 - cdfNormal(sup, mu, sigma)
+
+    u = Uniform(alpha, 1 - beta)
+    return idfNormal(u, mu, sigma)
