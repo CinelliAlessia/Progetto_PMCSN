@@ -19,7 +19,6 @@ num_client_served = [0 for _ in range(QUEUES_NUM)]  # Numero di clienti serviti 
 queues = [[] for _ in range(QUEUES_NUM)]  # Una lista di eventi per ogni coda
 queues_state = [0 for _ in range(QUEUES_NUM)]  # Array binario: 0 = Empty, 1 = Not Empty
 
-
 # ---------------------------------------------------------------------------------------
 
 
@@ -34,6 +33,9 @@ def start():
         if VERBOSE: print_stats()
 
         process_next_event()  # Processa l'evento più imminente
+
+        # Aggiungere evento di campionamento per le statistiche. Ogni # job completati si campiona
+        # Va usato uvs per non memorizzare tutto il campione
 
     # Print delle statistiche finali
     if VERBOSE: print_final_stats()
@@ -183,6 +185,7 @@ def generate_arrival_time(index_type):
 # Dato l'indice del tipo di cliente, genera il tempo di servizio
 def generate_service_time(index_type):
     selectStream(QUEUES_NUM + index_type)
+    # Meglio usare una nomale Normal(15 minuti, 5 minuti) -> 15 minuti di media centro campana, 5 minuti di deviazione standard
     return Exponential(1 / TASSO_SERVIZIO[index_type])
 
 
