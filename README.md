@@ -3,7 +3,7 @@
 ## Descrizione
 Il progetto consiste nell'analisi di un sistema reale con code: Ufficio Postale.
 
-Appunti lez 28:
+Appunti lez 22:
 prima parte:
 Obiettivo, va preso a prescindere da cosa sappiamo o meno fare.
 Gli obiettivi vanno presi in maniera incondizionata. E sono di tipo:
@@ -31,8 +31,7 @@ Passare poi alle decisioni basate sui risultati.
 
 "Simulazione guidata da tracce" -> Si hanno dati reali 
 "Simulazione guidata da distribuzioni" -> Se i dati non sono disponibili o se al variare dei dati come si comporta il sistema (Gen. numeri)
-"Simulazione guidata da eventi" -> 
-
+"Simulazione guidata da eventi" ->
 
 Arrivi contemporanei con probabilità cosi bassa che li consideriamo impossibili. NO eventi simultanei. No bulk. 
 

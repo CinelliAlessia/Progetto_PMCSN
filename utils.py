@@ -18,13 +18,7 @@ class Event:
     def __init__(self, event_type=None):
         self.event_time = None  # Event time
         self.event_type = event_type  # Arrivo o Completamento (A o C)
-        self.client_type = None  # Client type - Tipo di operazione (da 0 a CLIENT_TYPE*OPERATION_TYPE)
-
-
-class ComplEvent:
-    def __init__(self):
-        self.event = Event('C')
-        self.id_server = None  # Server ID
+        self.op_index = None  # Operation Index - Tipo di operazione - Da 0 a 7
 
 
 class Area:
