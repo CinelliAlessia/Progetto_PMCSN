@@ -24,11 +24,15 @@ num_client_in_system = [0 for _ in range(QUEUES_NUM)]  # Numero di clienti al mo
 num_client_served = [0 for _ in range(QUEUES_NUM)]  # Numero di clienti serviti per ogni tipo
 queues_state = [0 for _ in range(QUEUES_NUM)]  # Array binario: 0 = Empty, 1 = Not Empty
 num_sampling = 0
+
 # ---------------------------------------------------------------------------------------
 
 
-# Inizializza la simulazione
 def start():
+    """
+    Inizializza la simulazione e gestisce il loop principale
+    :return:
+    """
     plantSeeds(SEED)
 
     # Inizializza i tempi di arrivo per ogni tipo di evento
@@ -50,8 +54,11 @@ def start():
     if VERBOSE: print_final_stats()
 
 
-# quello che andrà in loop
 def process_next_event():
+    """
+    Processa l'evento più imminente e aggiorna lo stato del sistema
+    :return:
+    """
     # 1) Trova evento più imminente
     event, server_index_completed = get_next_event()
     if event is None:
@@ -84,9 +91,11 @@ def process_next_event():
     update_queue_state()  # Aggiorna lo stato della coda
 
 
-# Trova l'evento più imminente nella lista degli eventi (Arrivo o Completamento)
-# Restituisce il tempo dell'evento e il tipo di evento
 def get_next_event():
+    """
+    Trova l'evento più imminente nella lista degli eventi (Arrivo, Completamento, Sampling)
+    :return: Restituisce l'evento più imminente e l'indice del server se esso è un completamento
+    """
     event = Event()
     server_index_completed = None
 
@@ -124,8 +133,12 @@ def get_next_event():
     return event, server_index_completed
 
 
-# Processa l'evento di arrivo (Generico)
 def process_arrival(event):
+    """
+    Processa l'evento di arrivo e aggiorna lo stato del sistema
+    :param event: Rappresenta l'evento di arrivo
+    :return: None
+    """
     if event.op_index in MULTI_SERVER_QUEUES:  # Se il cliente nelle code di tipo Operazione Classica
         id_s_idle = server_selection_equity(MULTI_SERVER_INDEX)  # Bisogna selezionare il server fermo da più tempo se c'è
     elif event.op_index in SR_SERVER_QUEUES:  # Se il cliente nelle code di tipo Spedizione e Ritiri
@@ -158,9 +171,13 @@ def process_arrival(event):
     num_client_in_system[event.op_index] += 1  # Aggiorna il numero di clienti nel sistema
 
 
-# Processa l'evento di completamento e aggiorna lo stato del sistema
-# id_server è l'indice del server che ha completato il servizio
 def process_completion(event, id_server):
+    """
+    Processa l'evento di completamento e aggiorna lo stato del sistema
+    :param event: Rappresenta l'evento di completamento
+    :param id_server: L'indice del server che ha completato il servizio
+    :return:
+    """
 
     # ---------------- Aggiorna lo stato del sistema ----------------
     servers_state[id_server] = 0                # Imposto il server come libero (IDLE)
@@ -176,15 +193,23 @@ def process_completion(event, id_server):
 
 
 def process_sampling(event):
+    """
+    Processa l'evento di campionamento
+    :param event:
+    :return:
+    """
     # TODO: Implementare il campionamento
     global num_sampling
     num_sampling += 1
     return
 
 
-# Seleziona il prossimo cliente da servire in base alle specifiche di scheduling
-# id_s è l'indice del server che deve selezionare il cliente in coda, dato che lui ha completato.
 def select_client_from_queue(id_s):
+    """
+    Seleziona il prossimo cliente da servire in base alle specifiche di scheduling
+    :param id_s: L'indice del server che deve selezionare il cliente in coda, dato che lui ha completato
+    :return: None
+    """
 
     if id_s in MULTI_SERVER_INDEX:  # Se il server è di tipo Operazione Classica
         queues_index = MULTI_SERVER_QUEUES
@@ -214,8 +239,11 @@ def select_client_from_queue(id_s):
             break
 
 
-# Aggiorna lo stato della coda
 def update_queue_state():
+    """
+    Aggiorna lo stato della coda: 0 = Empty, 1 = Not Empty
+    :return: None
+    """
     for i in range(QUEUES_NUM):
         if len(queues[i]) == 0:
             queues_state[i] = 0
@@ -223,8 +251,12 @@ def update_queue_state():
             queues_state[i] = 1
 
 
-# Dato l'indice del tipo di cliente, genera un tempo di interarrivo relativo alla tipologia di cliente
 def generate_arrival_time(index_type):
+    """
+    Genera il tempo di arrivo per un cliente di tipo index_type
+    :param index_type: Indice del tipo di cliente, rappresenta la tipologia di coda in cui andrà
+    :return: Il tempo di interarrivo del cliente
+    """
     selectStream(index_type)
     if index_type == CLASSIC_ONLINE_STREAM:
         return Exponential(1 / (P_OC_ON * LAMBDA_ON))
@@ -246,8 +278,12 @@ def generate_arrival_time(index_type):
         raise ValueError('Tipo di cliente (index_type) non valido in GetArrival')
 
 
-# Dato l'indice del tipo di cliente, genera il tempo di servizio relativo alla tipologia di server (OC, SR, ATM)
 def generate_service_time(index_type):
+    """
+    Genera il tempo di servizio per un cliente di tipo index_type, in base alla tipologia di server (OC, SR, ATM)
+    :param index_type: Indice del tipo di cliente, rappresenta la tipologia di coda in cui andrebbe
+    :return: Il tempo di servizio del cliente
+    """
     # Meglio usare una nomale Normal(15 minuti, 5 minuti) -> 15 minuti di media centro campana, 5 minuti di
     # deviazione standard
     # return truncate_normal(15, 5,  10 ** -6, float('inf'))
@@ -265,8 +301,16 @@ def generate_service_time(index_type):
         raise ValueError('Tipo di cliente non valido')
 
 
-# Aggiorno il nuovo arrivo di client_type, basandomi sul tempo di arrivo precedente
 def generate_new_arrival(queue_index):
+    """
+    Genera un nuovo arrivo per il tipo di coda specificato
+    :param queue_index: Indice della coda per cui generare un nuovo arrivo
+    :return: None
+    """
+    # p_loss = calculate_p_loss()
+    # if random() < p_loss:
+      #  return
+
     new_time = generate_arrival_time(queue_index) + times.current   # last[queue_index]
     if new_time <= CLOSE_THE_DOOR_TIME:
         event_list.arrivals[queue_index] = new_time
@@ -275,9 +319,12 @@ def generate_new_arrival(queue_index):
         event_list.arrivals[queue_index] = None
 
 
-# Aggiorno il valore di event_list.sampling con il prossimo evento di campionamento (minuto o num job)
-# Se non ci sono più eventi di campionamento, lo imposto a None
 def generate_sampling_event():
+    """
+    Genera il prossimo evento di campionamento in base al tipo di campionamento (minuti o job)
+    Se non ci sono più eventi di campionamento (TIME_LIMIT), viene impostato None
+    :return: None
+    """
     # Minuti
     if SAMPLING_TYPE == 0:
         event_list.sampling += SAMPLING_RATE_MIN
@@ -293,7 +340,23 @@ def generate_sampling_event():
 
 
 # ------------------------------- Funzioni di supporto --------------------------------
+def calculate_p_loss():
+    """
+    Calcola la probabilità di perdita in base al numero di clienti nel sistema
+    :return: La probabilità di perdita
+    """
+    prob = sum(num_client_in_system)/MAX_PEAPLE
+    if prob > P_MAX_LOSS:
+        return P_MAX_LOSS
+    return prob
+
+
 def update_tip(area):
+    """
+    Aggiorna le aree di interesse per il calcolo delle prestazioni
+    :param area: Area di interesse
+    :return:
+    """
     for i in range(QUEUES_NUM):
         if num_client_in_system[i] > 0:
             area.customers[i] += (times.next - times.current) * num_client_in_system[i]
@@ -301,8 +364,12 @@ def update_tip(area):
             area.service[i] += (times.next - times.current) * num_client_in_service[i]
 
 
-# Formatta le code per la stampa
 def format_queues(queues):
+    """
+    Formatta le code per la stampa di debug
+    :param queues:
+    :return:
+    """
     formatted_queues = []
     for q in queues:
         formatted_queue = [event.event_time for event in q]  # Estrai solo i tempi da ciascun oggetto evento
@@ -311,6 +378,10 @@ def format_queues(queues):
 
 
 def print_status():
+    """
+    Stampa lo stato del sistema
+    :return:
+    """
     formatted_queues = format_queues(queues)  # Usa la funzione di supporto per formattare le code
     print(f"\n{'=' * 30}\n"
           f"Searching for the next event...\n"
@@ -322,6 +393,10 @@ def print_status():
 
 
 def print_final_stats():
+    """
+    Stampa le statistiche finali del sistema
+    :return:
+    """
     index = sum(num_client_served)
     print(f"for {index} jobs")
     # job-average statistics
@@ -346,11 +421,15 @@ def print_final_stats():
     # s/r = (c_n/ a_n)*x -> s : tempo di servizio
 
 
-# Quando più server sono in idle, seleziona il server che è IDLE da più tempo
-# Questo evita situazioni in cui è sempre il server con id più basso a prendere il cliente
-# Se la lista dei server è composta da un solo server, lo restituisce se IDLE
-# Se nessun server nella lista è IDLE, restituisce None
 def server_selection_equity(servers_index):
+    """
+    Seleziona il server libero da più tempo tra quelli nella lista. Equity
+    Questo evita situazioni in cui è sempre il server con id più basso a prendere il cliente
+    Se la lista dei server è composta da un solo server, lo restituisce se IDLE
+    Se nessun server nella lista è IDLE, restituisce None
+    :param servers_index: Lista degli indici dei server da valutare per la scelta
+    :return:
+    """
     # Cerco i server liberi
     server_id_idle = []
     for i in servers_index:
@@ -377,8 +456,16 @@ def server_selection_equity(servers_index):
     return selected_server
 
 
-# Tronca la distribuzione normale tra inf e sup - Lezione 28-05 (numero 31) SBAGLIATA
 def truncate_normal(mu, sigma, inf, sup):
+    """
+    Tronca la distribuzione normale tra due valori
+    Tronca la distribuzione normale tra inf e sup - Lezione 28-05 (numero 31) SBAGLIATA
+    :param mu:
+    :param sigma:
+    :param inf:
+    :param sup:
+    :return:
+    """
     alpha = cdfNormal(inf, mu, sigma)
     beta = 1 - cdfNormal(sup, mu, sigma)
 

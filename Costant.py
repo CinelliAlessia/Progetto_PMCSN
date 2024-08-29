@@ -84,6 +84,9 @@ P_SR = 0.15     # Probabilità di Spedizione e Ritiri
 P_OC_ON = 0.65  # Probabilità di Operazione Classica online
 P_SR_ON = 0.35  # Probabilità di Spedizione e Ritiri online
 
+P_MAX_LOSS = 0.8    # Probabilità di perdita massima
+MAX_PEAPLE = 100    # Num. di persone per cui si ha p_loss max
+
 # -------------------- Frequenza di campionamento --------------------
 SAMPLING_TYPE = 0   # Tipo di campionamento (0: min, 1: job)
 SAMPLING_RATE_MIN = 20  # Frequenza di campionamento per minuti
