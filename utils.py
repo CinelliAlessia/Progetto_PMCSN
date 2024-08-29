@@ -11,7 +11,8 @@ class Times:
 class EventList:
     def __init__(self):
         self.arrivals = []  # Arrival events list, each element is a type of operation
-        self.completed = [Event('C') for _ in range(N)]  # Completed events list
+        self.completed = [Event('C') for _ in range(SERVER_NUM)]  # Completed events list
+        self.sampling = 0  # Sampling event
 
 
 class Event:

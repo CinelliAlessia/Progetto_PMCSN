@@ -33,6 +33,7 @@ def start():
 
     # Inizializza i tempi di arrivo per ogni tipo di evento
     event_list.arrivals = [generate_arrival_time(i) for i in range(QUEUES_NUM)]
+    generate_sampling_event()
 
     while times.current <= CLOSE_THE_DOOR_TIME or sum(num_client_in_system) != 0:
         if VERBOSE: print_status()
@@ -81,6 +82,46 @@ def process_next_event():
         raise ValueError('Tipo di evento non valido')
 
     update_queue_state()  # Aggiorna lo stato della coda
+
+
+# Trova l'evento più imminente nella lista degli eventi (Arrivo o Completamento)
+# Restituisce il tempo dell'evento e il tipo di evento
+def get_next_event():
+    event = Event()
+    server_index_completed = None
+
+    # Cerca l'evento di arrivo più imminente
+    # (Tutti i valori devono essere maggiori di current, altrimenti problema serio)
+    for i in range(QUEUES_NUM):
+        if event_list.arrivals[i] is not None:
+            if ((event.event_time is None or event_list.arrivals[i] < event.event_time)
+                    and event_list.arrivals[i] > times.current):
+                event.event_time = event_list.arrivals[i]
+                event.op_index = i
+                event.event_type = 'A'
+
+    # Cerca l'evento completamento più imminente (Se il valore è 0, non va considerato)
+    for i in range(SERVER_NUM):
+        if event_list.completed[i].event_time is not None and event_list.completed[i].event_time != 0:
+            if (event.event_time is None or event_list.completed[i].event_time < event.event_time) and \
+                    event_list.completed[i].event_time > times.current:
+                event.event_time = event_list.completed[i].event_time
+                event.op_index = event_list.completed[i].op_index
+                event.event_type = 'C'
+                server_index_completed = i
+
+    # Verifico imminenza dell'evento di sampling
+    if event_list.sampling is not None and event.event_time is not None:
+
+        if event_list.sampling < event.event_time:
+            event.event_time = event_list.sampling
+            event.event_type = 'S'
+            event.op_index = None
+
+    if event.event_time is None:
+        return None, None
+
+    return event, server_index_completed
 
 
 # Processa l'evento di arrivo (Generico)
@@ -182,7 +223,7 @@ def update_queue_state():
             queues_state[i] = 1
 
 
-# Dato l'indice del tipo di cliente, genera il tempo di arrivo
+# Dato l'indice del tipo di cliente, genera un tempo di interarrivo relativo alla tipologia di cliente
 def generate_arrival_time(index_type):
     selectStream(index_type)
     if index_type == CLASSIC_ONLINE_STREAM:
@@ -205,7 +246,7 @@ def generate_arrival_time(index_type):
         raise ValueError('Tipo di cliente (index_type) non valido in GetArrival')
 
 
-# Dato l'indice del tipo di cliente, genera il tempo di servizio
+# Dato l'indice del tipo di cliente, genera il tempo di servizio relativo alla tipologia di server (OC, SR, ATM)
 def generate_service_time(index_type):
     # Meglio usare una nomale Normal(15 minuti, 5 minuti) -> 15 minuti di media centro campana, 5 minuti di
     # deviazione standard
@@ -305,7 +346,7 @@ def print_final_stats():
     # s/r = (c_n/ a_n)*x -> s : tempo di servizio
 
 
-# Quando più server sono in idle, seleziona il server che è fermo da più tempo
+# Quando più server sono in idle, seleziona il server che è IDLE da più tempo
 # Questo evita situazioni in cui è sempre il server con id più basso a prendere il cliente
 # Se la lista dei server è composta da un solo server, lo restituisce se IDLE
 # Se nessun server nella lista è IDLE, restituisce None
