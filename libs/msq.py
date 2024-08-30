@@ -180,7 +180,7 @@ print("  avg interarrivals .. = {0:6.2f}".format(events[0].t / index))
 print("  avg wait ........... = {0:6.2f}".format(area / index))
 print("  avg # in node ...... = {0:6.2f}".format(area / t.current))
 
-for s in range(1,SERVERS+1):            # adjust area to calculate */ 
+for s in range(1, SERVERS+1):            # adjust area to calculate */
      area -= sum[s].service              # averages for the queue   */    
 
 print("  avg delay .......... = {0:6.2f}".format(area / index))
@@ -188,7 +188,7 @@ print("  avg # in queue ..... = {0:6.2f}".format(area / t.current))
 print("\nthe server statistics are:\n")
 print("    server     utilization     avg service        share\n")
 for s in range(1,SERVERS+1):
-  print("{0:8d} {1:14.3f} {2:15.2f} {3:15.3f}".format(s, sum[s].service / t.current, sum[s].service / sum[s].served,float(sum[s].served) / index))
+  print("{0:8d} {1:14.3f} {2:15.2f} {3:15.3f}".format(s, sum[s].service / t.current, sum[s].service / sum[s].served, float(sum[s].served) / index))
 
 # C output:
 # for 10025 jobs the service node statistics are:

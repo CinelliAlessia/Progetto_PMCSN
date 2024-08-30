@@ -115,6 +115,10 @@ se arrivi random -> il numero di arrivi è una poissoniana (modello poisson va b
 per servizio: uniformi -> abbastanza no.
 heavy tail -> vanno bene per tante cose
 
+stesso seed, finito il run, azzeriamo le statistiche e ripartiamo con lo stesso seed a fare altri run, continuando quindi 
+a scorrere i numeri del "cerchio" di Lehmer.
+
+
 ## Struttura
 ### Identificazione operazioni
 1. Spedizione e Ritiro
@@ -126,3 +130,14 @@ heavy tail -> vanno bene per tante cose
 
 - plantSeeds(x) prende un valore iniziale x e lo utilizza per inizializzare tutti i 256 stream di generatori di numeri casuali in modo coerente. Ogni stream successivo viene derivato dal seed del precedente, creando una serie di stream indipendenti ma deterministici. Questo è utile in applicazioni di simulazione o in altri contesti dove è importante avere sequenze di numeri casuali riproducibili su più stream indipendenti.
 - Per cambiare lo stream utilizzato per la generazione di numeri casuali, utilizzi la funzione selectStream(index). Questa funzione seleziona lo stream specificato dall'indice index, che può variare da 0 a 255 (perché ci sono 256 stream disponibili).
+
+
+# job-average statistics
+print(f"average wait ............ = {sum(area_list.customers) / index:6.8f}")  # Wait = Tempo di risposta = Tempo di attesa in coda + Tempo di servizio
+print(f"average delay ........... = {sum(area_list.queue) / index:6.8f}")  # Delay = Tempo di attesa in coda
+print(f"average service time .... = {sum(area_list.service) / index:6.8f}")
+
+# time-average statistics: Sono statistiche step wise perche sono popolazioni, incrementano e decrementano di uno
+print(f"average # in the node ... = {sum(area_list.customers) / times.current:6.8f}")  # l(t)
+print(f"average # in the queue .. = {sum(area_list.queue) / times.current:6.8f}")  # q(t)
+print(f"utilization ............. = {sum(area_list.service) / (times.current*QUEUES_NUM):6.8f}")

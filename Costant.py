@@ -1,3 +1,4 @@
+import numpy as np
 # Prelievi e Versamenti -> 45% di probabilità
     # Sportello -> 45% di probabilità
     # ATM -> 55% di probabilità
@@ -7,17 +8,16 @@
 # Prenotazioni Online
 # Migliorativo - Locker pacchi, a fronte di una spesa iniziale (Pacchi grandi NO)
 
-
 # Parametri della simulazione
 SEED = 123456789
-CLOSE_THE_DOOR_TIME = 8 * 60  # 8 ore
+CLOSE_THE_DOOR_TIME = 4 * 60  # 8 ore
 SIMULATION_JOB_NUM = 1000
 
 # -------------------- Indici dei serventi --------------------
 
-MULTI_SERVER_INDEX = [0, 1, 2, 3, 4, 5]
-SR_SERVER_INDEX = [6]
-ATM_SERVER_INDEX = [7]
+MULTI_SERVER_INDEX = [0, 1, 2, 3, 4]
+SR_SERVER_INDEX = [5]
+ATM_SERVER_INDEX = [6]
 # Numero di serventi TOTALI -> 6 sportelli + Sportello Spedizione e Ritiri + 1 ATM
 SERVER_NUM = len(MULTI_SERVER_INDEX) + len(SR_SERVER_INDEX) + len(ATM_SERVER_INDEX)
 
@@ -45,7 +45,7 @@ QUEUES_NUM = len(MULTI_SERVER_QUEUES) + len(SR_SERVER_QUEUES) + len(ATM_SERVER_Q
 
 # -------------------- Tempi di Arrivo --------------------
 
-LAMBDA = 1 / 1.5    # Tempo di interarrivo medio 1.5 minuti
+LAMBDA_G = 1 / 1    # Tempo di interarrivo medio 1 minuti
 LAMBDA_ON = 1 / 15  # Tempo di interarrivo medio 15 minuti prenotazioni Online
 
 # -------------------- Tempi di Servizio --------------------
@@ -91,3 +91,13 @@ MAX_PEAPLE = 100    # Num. di persone per cui si ha p_loss max
 SAMPLING_TYPE = 0   # Tipo di campionamento (0: min, 1: job)
 SAMPLING_RATE_MIN = 20  # Frequenza di campionamento per minuti
 SAMPLING_RATE_JOB = 20  # Frequenza di campionamento per job
+
+
+# -------------------- NOMI CSV --------------------
+CSV_RESPONSE_TIME = "response_time.csv"
+
+
+# CALCOLO DEL TEMPO DI ARRIVO
+# Calcolo delle probabilità
+LAMBDA = LAMBDA_G + LAMBDA_ON
+P_ON = LAMBDA_ON / LAMBDA

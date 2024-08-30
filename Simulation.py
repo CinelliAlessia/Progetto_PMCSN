@@ -1,5 +1,5 @@
 # Algoritmo 1 slide 9 per Next-Event Simulation
-from libs.rngs import selectStream, plantSeeds
+from libs.rngs import selectStream, plantSeeds, getSeed
 from libs.rvgs import Exponential, Uniform
 from libs.rvms import cdfNormal, idfNormal
 from utils import *
@@ -9,7 +9,8 @@ VERBOSE = True
 # Inizializzazione delle variabili globali
 times = Times()  # Tempi di sistema
 event_list = EventList()  # Lista degli eventi del sistema
-area = Area()  # Area di interesse per il calcolo delle prestazioni
+area_list = [Area() for _ in range(QUEUES_NUM)]
+accumSum = [accumSum() for _ in range(SERVER_NUM)]
 
 # ------------------------------ Variabili per definire lo stato del sistema ------------------------------
 
@@ -27,16 +28,23 @@ num_sampling = 0
 
 # ---------------------------------------------------------------------------------------
 
+response_time_mean = 0  # Tempo di risposta
+waiting_time_mean = 0   # Tempo di attesa in coda
+service_time_mean = 0   # Tempo di servizio
 
-def start():
+# ------------------------------ Funzioni principali ------------------------------
+def start_simulation(seed):
     """
     Inizializza la simulazione e gestisce il loop principale
     :return:
     """
-    plantSeeds(SEED)
+    plantSeeds(seed)
 
     # Inizializza i tempi di arrivo per ogni tipo di evento
-    event_list.arrivals = [generate_arrival_time(i) for i in range(QUEUES_NUM)]
+    event_list.arrivals = [0 for _ in range(QUEUES_NUM)]
+    for i in range(QUEUES_NUM):
+        generate_new_arrival(i)
+
     generate_sampling_event()
 
     while times.current <= CLOSE_THE_DOOR_TIME or sum(num_client_in_system) != 0:
@@ -48,10 +56,12 @@ def start():
         # Va usato uvs per non memorizzare tutto il campione
         if sum(num_client_served) % SAMPLING_RATE_JOB == 0:
             # Evento di campionamento
+            # TODO
             pass
 
     # Print delle statistiche finali
     if VERBOSE: print_final_stats()
+    print("end time", times.current, " ore:", times.current/60)
 
 
 def process_next_event():
@@ -65,11 +75,6 @@ def process_next_event():
         return
     times.next = event.event_time
 
-    # 2) Aggiorna il tempo di sistema e le statistiche
-    update_tip(area)  # Aggiorna le aree di interesse TODO: giusto?
-
-    times.current = times.next  # Aggiorno il timer di sistema
-
     if VERBOSE: print(f"\n>>> Next Event: {event.event_type} | Client Type: {event.op_index}, "
                       f"Time: {event.event_time:.4f}")
 
@@ -78,16 +83,19 @@ def process_next_event():
         process_arrival(event)  # Processa l'arrivo
         times.last[event.op_index] = event.event_time  # TODO: times.last -> l'ultimo evento processato, giusto?
         generate_new_arrival(event.op_index)  # Genera nuovo evento di arrivo
-
     elif event.event_type == 'C':  # Se l'evento è un completamento
         process_completion(event, server_index_completed)
-
     elif event.event_type == 'S':  # Se l'evento è di campionamento
         process_sampling(event)
         generate_sampling_event()
     else:
         raise ValueError('Tipo di evento non valido')
 
+    # 3) Aggiorna il tempo di sistema e le statistiche
+    #aaa+= times.next-times.current
+    if not event.event_type == 'S':
+        update_tip(area_list)  # Aggiorna le aree di interesse TODO: giusto?
+    times.current = times.next  # Aggiorno il timer di sistema
     update_queue_state()  # Aggiorna lo stato della coda
 
 
@@ -156,6 +164,8 @@ def process_arrival(event):
 
         event_list.completed[id_s_idle].event_time = event.event_time + service_time # Aggiorno il tempo di completamento
         event_list.completed[id_s_idle].op_index = event.op_index  # Aggiorno il tipo di cliente in servizio
+
+        update_acc_sum(service_time, id_s_idle)
 
         if VERBOSE: print(f"Client served immediately by free server {id_s_idle}: "
                           f"Service completion time: {event_list.completed[id_s_idle].event_time:.4f}")
@@ -230,6 +240,8 @@ def select_client_from_queue(id_s):
             event_list.completed[id_s].event_time += service_time       # Aggiorno il tempo di completamento
             event_list.completed[id_s].op_index = next_client.op_index  # Aggiorno il tipo di cliente in servizio
 
+            update_acc_sum(service_time, id_s)
+
             if VERBOSE: print(f"Server {id_s} took client from queue of type {next_client.op_index}: "
                               f"Service completion time: {event_list.completed[id_s].event_time:.4f}")
 
@@ -251,7 +263,7 @@ def update_queue_state():
             queues_state[i] = 1
 
 
-def generate_arrival_time(index_type):
+def generate_interarrival_time(index_type):
     """
     Genera il tempo di arrivo per un cliente di tipo index_type
     :param index_type: Indice del tipo di cliente, rappresenta la tipologia di coda in cui andrà
@@ -259,43 +271,43 @@ def generate_arrival_time(index_type):
     """
     selectStream(index_type)
     if index_type == CLASSIC_ONLINE_STREAM:
-        return Exponential(1 / (P_OC_ON * LAMBDA_ON))
+        return Exponential(1 / (P_OC_ON * P_ON * LAMBDA))
     elif index_type == CLASSIC_DIFF_STREAM:
-        return Exponential(1 / (P_OC * P_DIFF * LAMBDA))
+        return Exponential(1 / (P_OC * P_DIFF * (1-P_ON) * LAMBDA))
     elif index_type == CLASSIC_STREAM:
-        return Exponential(1 / (P_OC * (1 - P_DIFF) * LAMBDA))
+        return Exponential(1 / (P_OC * (1 - P_DIFF) * (1-P_ON) * LAMBDA))
     elif index_type == SR_ONLINE_STREAM:
-        return Exponential(1 / (P_SR_ON * LAMBDA_ON))
+        return Exponential(1 / (P_SR_ON * P_ON * LAMBDA))
     elif index_type == SR_DIFF_STREAM:
-        return Exponential(1 / (P_SR * P_DIFF * LAMBDA))
+        return Exponential(1 / (P_SR * P_DIFF * (1-P_ON) * LAMBDA))
     elif index_type == SR_STREAM:
-        return Exponential(1 / (P_SR * (1 - P_DIFF) * LAMBDA))
+        return Exponential(1 / (P_SR * (1 - P_DIFF) * (1-P_ON) * LAMBDA))
     elif index_type == ATM_DIFF_STREAM:
-        return Exponential(1 / (P_ATM * P_DIFF * LAMBDA))
+        return Exponential(1 / (P_ATM * P_DIFF * (1-P_ON) * LAMBDA))
     elif index_type == ATM_STREAM:
-        return Exponential(1 / (P_ATM * (1 - P_DIFF) * LAMBDA))
+        return Exponential(1 / (P_ATM * (1 - P_DIFF) * (1-P_ON) * LAMBDA))
     else:
         raise ValueError('Tipo di cliente (index_type) non valido in GetArrival')
 
 
-def generate_service_time(index_type):
+def generate_service_time(queue_index):
     """
     Genera il tempo di servizio per un cliente di tipo index_type, in base alla tipologia di server (OC, SR, ATM)
-    :param index_type: Indice del tipo di cliente, rappresenta la tipologia di coda in cui andrebbe
+    :param queue_index: Indice del tipo di cliente, rappresenta la tipologia di coda in cui andrebbe
     :return: Il tempo di servizio del cliente
     """
     # Meglio usare una nomale Normal(15 minuti, 5 minuti) -> 15 minuti di media centro campana, 5 minuti di
     # deviazione standard
     # return truncate_normal(15, 5,  10 ** -6, float('inf'))
 
-    if index_type in MULTI_SERVER_QUEUES:
+    if queue_index in MULTI_SERVER_QUEUES:
         selectStream(CLASSIC_SERVICE_STREAM)    # Stream 8 per servizi dei clienti OC
         # return truncate_normal(1 / MU_OC, 5, 10 ** -6, float('inf'))
         return Exponential(1 / MU_OC)
-    elif index_type in SR_SERVER_QUEUES:
+    elif queue_index in SR_SERVER_QUEUES:
         selectStream(SR_SERVICE_STREAM)         # Stream 9 per servizi dei clienti SR
         return Exponential(1 / MU_SR)
-    elif index_type in ATM_SERVER_QUEUES:
+    elif queue_index in ATM_SERVER_QUEUES:
         selectStream(ATM_SERVICE_STREAM)        # Stream 10 per servizi dei clienti ATM
         return Exponential(1 / MU_ATM)
     else:
@@ -312,11 +324,11 @@ def generate_new_arrival(queue_index):
     # if random() < p_loss:
       #  return
 
-    new_time = generate_arrival_time(queue_index) + times.current   # last[queue_index]
+    new_time = generate_interarrival_time(queue_index) + times.next   # last[queue_index]
     if new_time <= CLOSE_THE_DOOR_TIME:
         event_list.arrivals[queue_index] = new_time
     else:
-        times.last[queue_index] = times.current     # Memorizziamo l'ultimo arrivo
+        times.last[queue_index] = times.next     # Memorizziamo l'ultimo arrivo
         event_list.arrivals[queue_index] = None
 
 
@@ -352,17 +364,17 @@ def calculate_p_loss():
     return prob
 
 
-def update_tip(area):
+def update_tip(area_list):
     """
     Aggiorna le aree di interesse per il calcolo delle prestazioni
-    :param area: Area di interesse
+    :param area_list:
     :return:
     """
     for i in range(QUEUES_NUM):
         if num_client_in_system[i] > 0:
-            area.customers[i] += (times.next - times.current) * num_client_in_system[i]
-            area.queue[i] += (times.next - times.current) * (num_client_in_system[i] - num_client_in_service[i])
-            area.service[i] += (times.next - times.current) * num_client_in_service[i]
+            area_list[i].customers += (times.next - times.current) * num_client_in_system[i]
+            area_list[i].queue += (times.next - times.current) * (num_client_in_system[i] - num_client_in_service[i])
+            area_list[i].service += (times.next - times.current) # * num_client_in_service[i]
 
 
 def format_queues(queues):
@@ -399,18 +411,45 @@ def print_final_stats():
     :return:
     """
     index = sum(num_client_served)
-    print(f"for {index} jobs")
-    # job-average statistics
-    print(
-        f"   average interarrival time = {sum(times.last) / index:6.2f}")  # Interarrival = Tempo tra due arrivi successivi
-    print(
-        f"   average wait ............ = {sum(area.customers) / index:6.2f}")  # Wait = Tempo di risposta = Tempo di attesa in coda + Tempo di servizio
-    print(f"   average delay ........... = {sum(area.queue) / index:6.2f}")  # Delay = Tempo di attesa in coda
-    print(f"   average service time .... = {sum(area.service) / index:6.2f}")
-    # time-average statistics: Sono statistiche step wise perche sono popolazioni, incrementano e decrementano di uno
-    print(f"   average # in the node ... = {sum(area.customers) / times.current:6.2f}")  # l(t)
-    print(f"   average # in the queue .. = {sum(area.queue) / times.current:6.2f}")  # q(t)
-    print(f"   utilization ............. = {sum(area.service) / times.current:6.2f}")
+    print(f"# job serviti: {index}")
+    print(f"average interarrival time = {max(times.last) / index:6.8f}")  # Interarrival = Tempo tra due arrivi successivi
+
+    print("    server     utilization     avg service        share\n")
+    for s in range(SERVER_NUM):
+        print("{0:8d} {1:14.3f} {2:15.2f} {3:15.3f}".format(
+            s + 1,
+            accumSum[s].service / times.current,
+            accumSum[s].service / accumSum[s].served,
+            float(accumSum[s].served) / index
+        ))
+
+    print("{0:8} {1:14} {2:14} {3:16} {4:17} {5:17} {6:15}".format(
+        "queue", "avg wait t", "avg delay t",  "avg service t",
+        "avg # in node", "avg # in queue", "avg # in service"))
+    for c in range(QUEUES_NUM):
+        if num_client_served[c] == 0:
+            continue
+
+        # Job-average statistics
+        avg_wait = area_list[c].customers / num_client_served[c]    # Tempo di risposta
+        avg_delay = area_list[c].queue / num_client_served[c]       # Tempo di attesa in coda
+        avg_service_time = area_list[c].service / num_client_served[c]  # Tempo di servizio
+
+        # Time-average statistics
+        avg_num_in_sys = area_list[c].customers / times.current
+        avg_num_in_queue = area_list[c].queue / times.current
+        avg_num_in_service = area_list[c].service / times.current
+
+        print("{0:8d} {1:12.8f} {2:12.8f} {3:14.8f} {4:17.8f} {5:17.8f} {6:14.8f}".format(
+            c + 1,
+            avg_wait,
+            avg_delay,
+            avg_service_time,
+            avg_num_in_sys,
+            avg_num_in_queue,
+            avg_num_in_service
+        ))
+
     print(f"\nSimulation complete. Clients served: {num_client_served}")
     print("num sampling: ", num_sampling)
     # x(t) = numero di job in servizio
@@ -473,7 +512,6 @@ def truncate_normal(mu, sigma, inf, sup):
     return idfNormal(mu, sigma, u)
 
 
-start()
-
-#for i in range(100):
-#    print(truncate_normal(15, 5, 10 ** -6, float('inf')))
+def update_acc_sum(service_time, id_s):
+    accumSum[id_s].service += service_time
+    accumSum[id_s].served += 1
