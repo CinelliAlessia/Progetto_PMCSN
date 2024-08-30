@@ -290,6 +290,7 @@ def generate_service_time(index_type):
 
     if index_type in MULTI_SERVER_QUEUES:
         selectStream(CLASSIC_SERVICE_STREAM)    # Stream 8 per servizi dei clienti OC
+        # return truncate_normal(1 / MU_OC, 5, 10 ** -6, float('inf'))
         return Exponential(1 / MU_OC)
     elif index_type in SR_SERVER_QUEUES:
         selectStream(SR_SERVICE_STREAM)         # Stream 9 per servizi dei clienti SR
@@ -466,11 +467,13 @@ def truncate_normal(mu, sigma, inf, sup):
     :param sup:
     :return:
     """
-    alpha = cdfNormal(inf, mu, sigma)
-    beta = 1 - cdfNormal(sup, mu, sigma)
-
-    u = Uniform(alpha, 1 - beta)
-    return idfNormal(u, mu, sigma)
+    alpha = cdfNormal(mu, sigma, inf)
+    # beta = 1 - cdfNormal(mu, sigma, sup)  # Se siamo interessati a limitare la distribuzione superiormente
+    u = Uniform(alpha, 1.0)
+    return idfNormal(mu, sigma, u)
 
 
 start()
+
+#for i in range(100):
+#    print(truncate_normal(15, 5, 10 ** -6, float('inf')))
