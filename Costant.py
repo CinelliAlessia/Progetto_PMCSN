@@ -8,11 +8,6 @@ import numpy as np
 # Prenotazioni Online
 # Migliorativo - Locker pacchi, a fronte di una spesa iniziale (Pacchi grandi NO)
 
-# Parametri della simulazione
-SEED = 123456789
-CLOSE_THE_DOOR_TIME = 4 * 60  # 8 ore
-SIMULATION_JOB_NUM = 1000
-
 # -------------------- Indici dei serventi --------------------
 
 MULTI_SERVER_INDEX = [0, 1, 2, 3, 4]
@@ -48,11 +43,21 @@ QUEUES_NUM = len(MULTI_SERVER_QUEUES) + len(SR_SERVER_QUEUES) + len(ATM_SERVER_Q
 LAMBDA_G = 1 / 1    # Tempo di interarrivo medio 1 minuti
 LAMBDA_ON = 1 / 15  # Tempo di interarrivo medio 15 minuti prenotazioni Online
 
-# -------------------- Tempi di Servizio --------------------
+# CALCOLO DEL TEMPO DI ARRIVO
+LAMBDA = LAMBDA_G + LAMBDA_ON
+P_ON = LAMBDA_ON / LAMBDA
 
-MU_OC = 1 / 13     # Tempo di servizio medio 13 minuti PV Sportello
+# -------------------- Tempi di Servizio --------------------
+# Base campana: μ±3σ (99.7% dei valori)
+
+MU_OC = 1 / 15      # Tempo di servizio medio 15 minuti PV Sportello
+SIGMA_OC = 5 / 3        # Deviazione standard 5 minuti PV Sportello
+
 MU_SR = 1 / 6       # Tempo di servizio medio 6 minuti
-MU_ATM = 1 / 2     # Tempo di servizio medio 2 minuti PV ATM
+SIGMA_SR = 2 / 3        # Deviazione standard 2 minuti
+
+MU_ATM = 1 / 2.5    # Tempo di servizio medio 2.5 minuti PV ATM
+SIGMA_ATM = 1 / 3       # Deviazione standard 1 minuto PV ATM
 
 # -------------------- Stream Index --------------------
 
@@ -85,19 +90,14 @@ P_OC_ON = 0.65  # Probabilità di Operazione Classica online
 P_SR_ON = 0.35  # Probabilità di Spedizione e Ritiri online
 
 P_MAX_LOSS = 0.8    # Probabilità di perdita massima
-MAX_PEAPLE = 100    # Num. di persone per cui si ha p_loss max
+MAX_PEOPLE = 100    # Num. di persone per cui si ha p_loss max
 
-# -------------------- Frequenza di campionamento --------------------
-SAMPLING_TYPE = 0   # Tipo di campionamento (0: min, 1: job)
-SAMPLING_RATE_MIN = 20  # Frequenza di campionamento per minuti
-SAMPLING_RATE_JOB = 20  # Frequenza di campionamento per job
+# -------------------- CSV --------------------
+DIRECTORY_FINITE_H = "./finite_horizon/"
+DIRECTORY_INFINITE_H = "./infinite_horizon/"
 
+CSV_UTILIZATION = "utilization_finite.csv"
+CSV_DELAY = "delay_finite.csv"       # Tempo di attesa in coda
+CSV_WAITING_TIME = "waiting_time_finite.csv"     # Tempo di risposta (Tempo di attesa + Tempo di servizio)
 
-# -------------------- NOMI CSV --------------------
-CSV_RESPONSE_TIME = "response_time.csv"
-
-
-# CALCOLO DEL TEMPO DI ARRIVO
-# Calcolo delle probabilità
-LAMBDA = LAMBDA_G + LAMBDA_ON
-P_ON = LAMBDA_ON / LAMBDA
+CSV_END_WORK_TIME_FINITE = "end_work_time_finite.csv"   # Tempo di fine lavoro

@@ -27,11 +27,11 @@ class Event:
 class Area:
     def __init__(self):
         self.customers = 0  # clienti nel sistema [Area unità di misura: (total customers) * time]
-        self.queue = 0  # clienti in coda queues [Area unità di misura: (customers in queue) * time]
-        self.service = 0  # Clienti in servizio [Area unità di misura: (customers in service) * time]
+        self.queue = 0      # clienti in coda queues [Area unità di misura: (customers in queue) * time]
+        self.service = 0    # Clienti in servizio [Area unità di misura: (customers in service) * time]
 
 
-class accumSum:
+class AccumSum:
     def __init__(self):
         # accumulated sums of
         self.service = 0          #  Tempo di servizio accumulato

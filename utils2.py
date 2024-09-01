@@ -26,44 +26,8 @@ def batch_means(data, batch_size):
     return batch_means
 
 
-def write_on_csv(input_list):
-    with open("acs.dat", mode='w', newline='') as file:
-        writer = csv.writer(file)
-        for element in input_list:
-            writer.writerow([element])
-
-
-def append_on_csv(input_data, file):
-    # response_time_mean = event_list.completed[server_index_completed].event_time - event.event_time
-    #append_on_csv(response_time_mean, CSV_RESPONSE_TIME)
-
-    with open(file, mode = 'a', newline= '') as f:
-        writer = csv.writer(f)
-        writer.writerow(input_data)
-
-
 def cumulative_mean(data):
     # Computes the cumulative mean for an array of data
     return np.cumsum(data) / np.arange(1, len(data) + 1)
 
 
-def plot_cumulative_means(cumulative_means, stationary_value, ylabel, title, filename):
-    plt.figure(figsize=(10, 6))
-    plt.plot(cumulative_means, label=ylabel)
-    plt.xlabel('Batch Number')
-
-    # Plot a horizontal line for the stationary value
-    plt.axhline(stationary_value, color='orange', label='Mean of means')
-
-    plt.ylabel(ylabel)
-    plt.title(title)
-    plt.legend()
-    plt.grid(True)
-
-    # Create folder 'plots' if it doesn't exist
-    if not os.path.exists('plots'):
-        os.makedirs('plots')
-
-    # Save plots
-    plt.savefig(f'plots/{filename}.png')
-    plt.close()

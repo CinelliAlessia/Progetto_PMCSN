@@ -3,6 +3,19 @@
 ## Descrizione
 Il progetto consiste nell'analisi di un sistema reale con code: Ufficio Postale.
 
+
+# Aggiungere evento di campionamento per le statistiche. Ogni # job completati si campiona
+# Va usato uvs per non memorizzare tutto il campione
+
+    # x(t) = numero di job in servizio
+    # l(t) = q(t) + x(t) = numero di job nel sistema
+
+    # La relazione tra job-average e time-average è data dalla legge di Little
+
+    # Intensità di traffico: rapporto tra freq. di arrivo e di completamento:
+    # s/r = (c_n/ a_n)*x -> s : tempo di servizio
+
+
 Appunti lez 22:
 prima parte:
 Obiettivo, va preso a prescindere da cosa sappiamo o meno fare.

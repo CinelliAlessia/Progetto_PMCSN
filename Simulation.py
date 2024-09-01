@@ -1,44 +1,66 @@
 # Algoritmo 1 slide 9 per Next-Event Simulation
-from libs.rngs import selectStream, plantSeeds, getSeed
+from libs.rngs import selectStream
 from libs.rvgs import Exponential, Uniform
 from libs.rvms import cdfNormal, idfNormal
-from utils import *
+from Class_definition import *
 
-VERBOSE = True
+VERBOSE = False
 
-# Inizializzazione delle variabili globali
-times = Times()  # Tempi di sistema
-event_list = EventList()  # Lista degli eventi del sistema
-area_list = [Area() for _ in range(QUEUES_NUM)]
-accumSum = [accumSum() for _ in range(SERVER_NUM)]
 
-# ------------------------------ Variabili per definire lo stato del sistema ------------------------------
+def initialize_globals():
+    """
+    Inizializza le variabili globali per ogni run.
+    """
+    global times, event_list, area_list, accumSum, servers_state, num_client_in_service
+    global queues_num, queues, num_client_in_system, num_client_served, num_sampling
+    global CLOSE_THE_DOOR_TIME, FINITE, INFINITE, SAMPLING_RATE_MIN
 
-servers_state = [0 for _ in range(SERVER_NUM)]  # Array binario: 0 = IDLE, 1 = BUSY
-num_client_in_service = [0 for _ in range(QUEUES_NUM)]  # Numero di clienti in servizio.
-queues_num = [0 for _ in range(QUEUES_NUM)]  # Numero di clienti in coda per ogni tipo
+    # Inizializzazione delle variabili globali
+    times = Times()  # Tempi di sistema
+    event_list = EventList()  # Lista degli eventi del sistema
+    area_list = [Area() for _ in range(QUEUES_NUM)]  # Lista delle aree di interesse per il calcolo delle prestazioni
+    accumSum = [AccumSum() for _ in range(SERVER_NUM)]  # Accumulatore delle somme per il calcolo delle prestazioni
 
-# ------------------------------ Variabili utilizzate  ------------------------------
+    # ------------------------------ Variabili per definire lo stato del sistema ------------------------------
 
-queues = [[] for _ in range(QUEUES_NUM)]  # Una lista di eventi per ogni coda
-num_client_in_system = [0 for _ in range(QUEUES_NUM)]  # Numero di clienti al momento nel sistema per ogni tipo
-num_client_served = [0 for _ in range(QUEUES_NUM)]  # Numero di clienti serviti per ogni tipo
-queues_state = [0 for _ in range(QUEUES_NUM)]  # Array binario: 0 = Empty, 1 = Not Empty
-num_sampling = 0
+    servers_state = [0 for _ in range(SERVER_NUM)]  # Array binario: 0 = IDLE, 1 = BUSY
+    num_client_in_service = [0 for _ in range(QUEUES_NUM)]  # Numero di clienti in servizio.
+    queues_num = [0 for _ in range(QUEUES_NUM)]  # Numero di clienti in coda per ogni tipo
 
-# ---------------------------------------------------------------------------------------
+    # ------------------------------ Variabili utilizzate  ------------------------------
 
-response_time_mean = 0  # Tempo di risposta
-waiting_time_mean = 0   # Tempo di attesa in coda
-service_time_mean = 0   # Tempo di servizio
+    queues = [[] for _ in range(QUEUES_NUM)]  # Una lista di eventi per ogni coda
+    num_client_in_system = [0 for _ in range(QUEUES_NUM)]  # Numero di clienti al momento nel sistema per ogni tipo
+    num_client_served = [0 for _ in range(QUEUES_NUM)]  # Numero di clienti serviti per ogni tipo
+    num_sampling = 0
 
-# ------------------------------ Funzioni principali ------------------------------
-def start_simulation(seed):
+    # ---------------------------------------------------------------------------------------
+
+    CLOSE_THE_DOOR_TIME = 0  # Tempo di chiusura della simulazione
+    FINITE = False
+    INFINITE = False
+    SAMPLING_RATE_MIN = 0
+
+
+def initialize(end_time, type_simulation, sampling_rate=0):
+    global CLOSE_THE_DOOR_TIME, FINITE, INFINITE, SAMPLING_RATE_MIN
+    CLOSE_THE_DOOR_TIME = end_time
+
+    if type_simulation == "finite":
+        FINITE = True
+    elif type_simulation == "infinite":
+        INFINITE = True
+    SAMPLING_RATE_MIN = sampling_rate
+
+
+def start_simulation(end_time, type_simulation, sampling_rate=0, batch_num=0):
     """
     Inizializza la simulazione e gestisce il loop principale
     :return:
     """
-    plantSeeds(seed)
+
+    initialize_globals()
+    initialize(end_time, type_simulation, sampling_rate)
 
     # Inizializza i tempi di arrivo per ogni tipo di evento
     event_list.arrivals = [0 for _ in range(QUEUES_NUM)]
@@ -47,56 +69,21 @@ def start_simulation(seed):
 
     generate_sampling_event()
 
-    while times.current <= CLOSE_THE_DOOR_TIME or sum(num_client_in_system) != 0:
-        if VERBOSE: print_status()
+    if FINITE:
+        while times.current <= CLOSE_THE_DOOR_TIME or sum(num_client_in_system) != 0:
 
-        process_next_event()  # Processa l'evento più imminente
+            if VERBOSE: print_status()
+            process_next_event()  # Processa l'evento più imminente
+    elif INFINITE:
+        while num_sampling < batch_num:
+            if VERBOSE: print_status()
+            process_next_event()
 
-        # Aggiungere evento di campionamento per le statistiche. Ogni # job completati si campiona
-        # Va usato uvs per non memorizzare tutto il campione
-        if sum(num_client_served) % SAMPLING_RATE_JOB == 0:
-            # Evento di campionamento
-            # TODO
-            pass
-
+    # ------------------ Condizione di terminazione raggiunta --------------------
     # Print delle statistiche finali
     if VERBOSE: print_final_stats()
-    print("end time", times.current, " ore:", times.current/60)
-
-
-def process_next_event():
-    """
-    Processa l'evento più imminente e aggiorna lo stato del sistema
-    :return:
-    """
-    # 1) Trova evento più imminente
-    event, server_index_completed = get_next_event()
-    if event is None:
-        return
-    times.next = event.event_time
-
-    if VERBOSE: print(f"\n>>> Next Event: {event.event_type} | Client Type: {event.op_index}, "
-                      f"Time: {event.event_time:.4f}")
-
-    # 3) Processa l'evento e aggiorna lo stato del sistema
-    if event.event_type == 'A':  # Se l'evento è un arrivo
-        process_arrival(event)  # Processa l'arrivo
-        times.last[event.op_index] = event.event_time  # TODO: times.last -> l'ultimo evento processato, giusto?
-        generate_new_arrival(event.op_index)  # Genera nuovo evento di arrivo
-    elif event.event_type == 'C':  # Se l'evento è un completamento
-        process_completion(event, server_index_completed)
-    elif event.event_type == 'S':  # Se l'evento è di campionamento
-        process_sampling(event)
-        generate_sampling_event()
-    else:
-        raise ValueError('Tipo di evento non valido')
-
-    # 3) Aggiorna il tempo di sistema e le statistiche
-    #aaa+= times.next-times.current
-    if not event.event_type == 'S':
-        update_tip(area_list)  # Aggiorna le aree di interesse TODO: giusto?
-    times.current = times.next  # Aggiorno il timer di sistema
-    update_queue_state()  # Aggiorna lo stato della coda
+    if FINITE: save_stats("finite")
+    print("end time", times.current, " ore:", times.current / 60)
 
 
 def get_next_event():
@@ -127,9 +114,9 @@ def get_next_event():
                 event.event_type = 'C'
                 server_index_completed = i
 
+
     # Verifico imminenza dell'evento di sampling
     if event_list.sampling is not None and event.event_time is not None:
-
         if event_list.sampling < event.event_time:
             event.event_time = event_list.sampling
             event.event_type = 'S'
@@ -139,6 +126,40 @@ def get_next_event():
         return None, None
 
     return event, server_index_completed
+
+
+def process_next_event():
+    """
+    Processa l'evento più imminente e aggiorna lo stato del sistema
+    :return:
+    """
+    # 1) Trova evento più imminente
+    event, server_index_completed = get_next_event()
+    if event is None:
+        return
+    times.next = event.event_time
+
+    if VERBOSE: print(f"\n>>> Next Event: {event.event_type} | Client Type: {event.op_index}, "
+                      f"Time: {event.event_time:.4f}")
+
+    # 3) Processa l'evento e aggiorna lo stato del sistema
+    if event.event_type == 'A':     # Se l'evento è un arrivo
+        process_arrival(event)      # Processa l'arrivo
+        times.last[event.op_index] = event.event_time  # TODO: times.last -> l'ultimo evento processato, giusto?
+        generate_new_arrival(event.op_index)  # Genera nuovo evento di arrivo
+    elif event.event_type == 'C':  # Se l'evento è un completamento
+        process_completion(event, server_index_completed)
+    elif event.event_type == 'S':  # Se l'evento è di campionamento
+        process_sampling(event)
+        generate_sampling_event()
+    else:
+        raise ValueError('Tipo di evento non valido')
+
+    # 3) Aggiorna il tempo di sistema e le statistiche
+    if not event.event_type == 'S':
+        update_tip(area_list)   # Aggiorna le aree di interesse TODO: giusto?
+
+    times.current = times.next  # Aggiorno il timer di sistema
 
 
 def process_arrival(event):
@@ -204,12 +225,19 @@ def process_completion(event, id_server):
 
 def process_sampling(event):
     """
-    Processa l'evento di campionamento
+    Processa l'evento di campionamento utilizzato nella simulazione con batch means
+    o nel calcolo delle prestazioni su necessità
     :param event:
     :return:
     """
+
     # TODO: Implementare il campionamento
-    global num_sampling
+    global num_sampling, FINITE, INFINITE
+    if FINITE:
+        pass
+    elif INFINITE: # Campionamento per batch means
+        save_stats("infinite")
+
     num_sampling += 1
     return
 
@@ -251,18 +279,6 @@ def select_client_from_queue(id_s):
             break
 
 
-def update_queue_state():
-    """
-    Aggiorna lo stato della coda: 0 = Empty, 1 = Not Empty
-    :return: None
-    """
-    for i in range(QUEUES_NUM):
-        if len(queues[i]) == 0:
-            queues_state[i] = 0
-        else:
-            queues_state[i] = 1
-
-
 def generate_interarrival_time(index_type):
     """
     Genera il tempo di arrivo per un cliente di tipo index_type
@@ -296,20 +312,19 @@ def generate_service_time(queue_index):
     :param queue_index: Indice del tipo di cliente, rappresenta la tipologia di coda in cui andrebbe
     :return: Il tempo di servizio del cliente
     """
-    # Meglio usare una nomale Normal(15 minuti, 5 minuti) -> 15 minuti di media centro campana, 5 minuti di
-    # deviazione standard
-    # return truncate_normal(15, 5,  10 ** -6, float('inf'))
 
     if queue_index in MULTI_SERVER_QUEUES:
         selectStream(CLASSIC_SERVICE_STREAM)    # Stream 8 per servizi dei clienti OC
-        # return truncate_normal(1 / MU_OC, 5, 10 ** -6, float('inf'))
-        return Exponential(1 / MU_OC)
+        return truncate_normal(1 / MU_OC, SIGMA_OC, 10 ** -6, float('inf'))
+        # return Exponential(1 / MU_OC)
     elif queue_index in SR_SERVER_QUEUES:
         selectStream(SR_SERVICE_STREAM)         # Stream 9 per servizi dei clienti SR
-        return Exponential(1 / MU_SR)
+        return truncate_normal(1 / MU_SR, SIGMA_SR, 10 ** -6, float('inf'))
+        # return Exponential(1 / MU_SR)
     elif queue_index in ATM_SERVER_QUEUES:
         selectStream(ATM_SERVICE_STREAM)        # Stream 10 per servizi dei clienti ATM
-        return Exponential(1 / MU_ATM)
+        return truncate_normal(1 / MU_ATM, SIGMA_ATM, 10 ** -6, float('inf'))
+        # return Exponential(1 / MU_ATM)
     else:
         raise ValueError('Tipo di cliente non valido')
 
@@ -323,6 +338,15 @@ def generate_new_arrival(queue_index):
     # p_loss = calculate_p_loss()
     # if random() < p_loss:
       #  return
+
+    """current_time = times.next
+
+    stop = True
+    while(stop):
+        p_loss = calculate_p_loss()
+        if random() < p_loss:
+            stop = False
+            break"""
 
     new_time = generate_interarrival_time(queue_index) + times.next   # last[queue_index]
     if new_time <= CLOSE_THE_DOOR_TIME:
@@ -339,17 +363,9 @@ def generate_sampling_event():
     :return: None
     """
     # Minuti
-    if SAMPLING_TYPE == 0:
-        event_list.sampling += SAMPLING_RATE_MIN
-        if event_list.sampling > CLOSE_THE_DOOR_TIME:
-            event_list.sampling = None
-    # Job
-    elif SAMPLING_TYPE == 1:
-        event_list.sampling += SAMPLING_RATE_JOB
-        if event_list.sampling > SIMULATION_JOB_NUM:
-            event_list.sampling = None
-    else:
-        raise ValueError('Tipo di campionamento non valido')
+    event_list.sampling += SAMPLING_RATE_MIN
+    if event_list.sampling > CLOSE_THE_DOOR_TIME:
+        event_list.sampling = None
 
 
 # ------------------------------- Funzioni di supporto --------------------------------
@@ -358,7 +374,7 @@ def calculate_p_loss():
     Calcola la probabilità di perdita in base al numero di clienti nel sistema
     :return: La probabilità di perdita
     """
-    prob = sum(num_client_in_system)/MAX_PEAPLE
+    prob = sum(num_client_in_system) / MAX_PEOPLE   #TODO: forse va normalizzata su uno
     if prob > P_MAX_LOSS:
         return P_MAX_LOSS
     return prob
@@ -452,13 +468,6 @@ def print_final_stats():
 
     print(f"\nSimulation complete. Clients served: {num_client_served}")
     print("num sampling: ", num_sampling)
-    # x(t) = numero di job in servizio
-    # l(t) = q(t) + x(t) = numero di job nel sistema
-
-    # La relazione tra job-average e time-average è data dalla legge di Little
-
-    # Intensità di traffico: rapporto tra freq. di arrivo e di completamento:
-    # s/r = (c_n/ a_n)*x -> s : tempo di servizio
 
 
 def server_selection_equity(servers_index):
@@ -498,8 +507,7 @@ def server_selection_equity(servers_index):
 
 def truncate_normal(mu, sigma, inf, sup):
     """
-    Tronca la distribuzione normale tra due valori
-    Tronca la distribuzione normale tra inf e sup - Lezione 28-05 (numero 31) SBAGLIATA
+    Tronca la distribuzione normale tra inf e sup - Lezione 28-05 (numero 31)
     :param mu:
     :param sigma:
     :param inf:
@@ -515,3 +523,73 @@ def truncate_normal(mu, sigma, inf, sup):
 def update_acc_sum(service_time, id_s):
     accumSum[id_s].service += service_time
     accumSum[id_s].served += 1
+
+
+# ------------------------------ Funzioni per la scrittura su file ------------------------------
+
+
+def save_stats_on_file(file_csv, data):
+    """
+    Salva le statistiche finali su file CSV.
+
+    :param file_csv: Percorso del file CSV.
+    :param data: Dati da scrivere nel file (può essere una stringa formattata CSV).
+    :return: None
+    """
+
+    # Utilizza il contesto 'with' per assicurare che il file venga chiuso correttamente
+    try:
+        with open(file_csv, 'a') as csv_file:
+            csv_file.write(data)
+    except Exception as e:
+        print(f"Errore durante la scrittura su file: {e}")
+
+
+def save_stats(tipo):
+    """
+    Calcola e salva le statistiche finali su file CSV per ogni run.
+
+    :param tipo: Il tipo di statistica ('finito' o 'infinito') che determina il percorso dei file e il calcolo.
+    :return: None
+    """
+    csv_utilization = CSV_UTILIZATION
+    csv_delay = CSV_DELAY
+    csv_waiting_time = CSV_WAITING_TIME
+
+    if tipo == 'finite':
+        directory = DIRECTORY_FINITE_H
+    elif tipo == 'infinite':
+        directory = DIRECTORY_INFINITE_H
+    else:
+        raise ValueError("Tipo non valido. Utilizzare 'finito' o 'infinito'.")
+
+    # Nome del file CSV
+    rho_csv = directory + csv_utilization
+
+    for s in range(SERVER_NUM):
+        # Calcolo dell'utilizzo del server
+        rho = accumSum[s].service / times.current
+
+        # Scrive direttamente il valore rho nel file CSV, separando con una virgola
+        save_stats_on_file(rho_csv, f"{rho}, ")
+    # Aggiunge una nuova linea per separare le statistiche del prossimo run
+    save_stats_on_file(rho_csv, "\n")
+
+    for c in range(QUEUES_NUM):
+        if num_client_served[c] == 0:
+            continue
+
+        # Job-average statistics
+        avg_wait = area_list[c].customers / num_client_served[c]  # Tempo di risposta
+        avg_delay = area_list[c].queue / num_client_served[c]  # Tempo di attesa in coda
+
+        # Scrive direttamente i valori avg_delay e avg_wait nel file CSV, separando con una virgola
+        save_stats_on_file(directory + csv_delay, f"{avg_delay}, ")
+        save_stats_on_file(directory + csv_waiting_time, f"{avg_wait}, ")
+
+    save_stats_on_file(directory + csv_delay, "\n")
+    save_stats_on_file(directory + csv_waiting_time, "\n")
+
+    # Tempo di fine lavoro, solo per il tipo 'finite'
+    if tipo == 'finite':
+        save_stats_on_file(directory + CSV_END_WORK_TIME_FINITE, f"{times.current}\n")
