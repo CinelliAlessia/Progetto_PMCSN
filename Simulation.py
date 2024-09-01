@@ -4,39 +4,10 @@ from libs.rvgs import Exponential
 from Class_definition import *
 from utils import *
 
-# Inizializzazione delle variabili globali
-times = Times()  # Tempi di sistema
-event_list = EventList()  # Lista degli eventi del sistema
-area_list = [Area() for _ in range(QUEUES_NUM)]  # Lista delle aree di interesse per il calcolo delle prestazioni
-accumSum = [AccumSum() for _ in range(SERVER_NUM)]  # Accumulatore delle somme per il calcolo delle prestazioni
-
-# ------------------------------ Variabili per definire lo stato del sistema ------------------------------
-
-servers_state = [0 for _ in range(SERVER_NUM)]  # Array binario: 0 = IDLE, 1 = BUSY
-num_client_in_service = [0 for _ in range(QUEUES_NUM)]  # Numero di clienti in servizio.
-queues_num = [0 for _ in range(QUEUES_NUM)]  # Numero di clienti in coda per ogni tipo
-
-# ------------------------------ Variabili utilizzate  ------------------------------
-
-queues = [[] for _ in range(QUEUES_NUM)]  # Una lista di eventi per ogni coda
-num_client_in_system = [0 for _ in range(QUEUES_NUM)]  # Numero di clienti al momento nel sistema per ogni tipo
-num_client_served = [0 for _ in range(QUEUES_NUM)]  # Numero di clienti serviti per ogni tipo
-num_sampling = 0
-
-# ---------------------------------------------------------------------------------------
-
-CLOSE_THE_DOOR_TIME = 0  # Tempo di chiusura della simulazione
-FINITE = False
-INFINITE = False
-SAMPLING_RATE_MIN = 0
 
 def initialize_globals():
-    """
-    Inizializza le variabili globali per ogni run.
-    """
-    global times, event_list, area_list, accumSum, servers_state, num_client_in_service
-    global queues_num, queues, num_client_in_system, num_client_served, num_sampling
-    global CLOSE_THE_DOOR_TIME, FINITE, INFINITE, SAMPLING_RATE_MIN
+    global times, event_list, area_list, accumSum, servers_state, num_client_in_service, queues_num, queues, \
+        num_client_in_system, num_client_served, num_sampling, CLOSE_THE_DOOR_TIME, FINITE, INFINITE, SAMPLING_RATE_MIN
 
     # Inizializzazione delle variabili globali
     times = Times()  # Tempi di sistema
@@ -279,6 +250,7 @@ def select_client_from_queue(id_s):
         queues_index = MULTI_SERVER_QUEUES
     elif id_s in SR_SERVER_INDEX:  # Se il server è di tipo Spedizione e Ritiri
         if IMPROVED_SIM: queues_index = SR_SERVER_QUEUES + MULTI_SERVER_QUEUES
+        else: queues_index = SR_SERVER_QUEUES
     elif id_s in ATM_SERVER_INDEX:  # Se il server è di tipo ATM
         queues_index = ATM_SERVER_QUEUES
     elif id_s in LOCKER_SERVER_INDEX:
@@ -339,7 +311,7 @@ def generate_interarrival_time(index_type):
     elif index_type == LOCKER_STREAM:   # SOLO IMPROVED
         return Exponential(1 / (P_LOCKER * P_SR * (1-P_DIFF) * (1-P_ON) * LAMBDA))
     else:
-        raise ValueError('Tipo di cliente (index_type) non valido in GetArrival')
+        raise ValueError(f'Tipo di cliente ({index_type}) non valido in GetArrival')
 
 
 def generate_service_time(queue_index):
@@ -440,3 +412,149 @@ def server_selection_equity(servers_index):
         else:
             return i  # None -> non ha mai lavorato
     return selected_server
+
+# ---------------- Funzioni di supporto ----------------
+def calculate_p_loss():
+    """
+    Calcola la probabilità di perdita in base al numero di clienti nel sistema
+    :return: La probabilità di perdita
+    """
+    prob = sum(num_client_in_system) / MAX_PEOPLE   #TODO: forse va normalizzata su uno
+    if prob > P_MAX_LOSS:
+        return P_MAX_LOSS
+    return prob
+
+
+def update_tip(area_list):
+    """
+    Aggiorna le aree di interesse per il calcolo delle prestazioni
+    :param area_list:
+    :return:
+    """
+    for i in range(QUEUES_NUM):
+        if num_client_in_system[i] > 0:
+            area_list[i].customers += (times.next - times.current) * num_client_in_system[i]
+            area_list[i].queue += (times.next - times.current) * (num_client_in_system[i] - num_client_in_service[i])
+            area_list[i].service += (times.next - times.current) # * num_client_in_service[i]
+
+
+def print_status():
+    """
+    Stampa lo stato del sistema
+    :return:
+    """
+    formatted_queues = format_queues(queues)  # Usa la funzione di supporto per formattare le code
+    print(f"\n{'=' * 30}\n"
+          f"Searching for the next event...\n"
+          f"System Timer: {times.current:.4f} | "
+          f"Clients in system: {num_client_in_system} | "
+          f"Clients in service: {num_client_in_service} | "
+          f"Clients served: {num_client_served} | "
+          f"Queues: {formatted_queues}\n{'=' * 30}")
+
+
+def print_final_stats():
+    """
+    Stampa le statistiche finali del sistema
+    :return:
+    """
+    index = sum(num_client_served)
+    if index == 0:
+        print("Non sono stati serviti clienti")
+        return
+    print(f"# job serviti: {index}")
+    print(f"average interarrival time = {max(times.last) / index:6.8f}")  # Interarrival = Tempo tra due arrivi successivi
+
+    print("    server     utilization     avg service        share\n")
+    for s in range(SERVER_NUM):
+        print("{0:8d} {1:14.3f} {2:15.2f} {3:15.3f}".format(
+            s + 1,
+            accumSum[s].service / times.current,
+            accumSum[s].service / accumSum[s].served,
+            float(accumSum[s].served) / index
+        ))
+
+    print("{0:8} {1:14} {2:14} {3:16} {4:17} {5:17} {6:15}".format(
+        "queue", "avg wait t", "avg delay t",  "avg service t",
+        "avg # in node", "avg # in queue", "avg # in service"))
+    for c in range(QUEUES_NUM):
+        if num_client_served[c] == 0:
+            continue
+
+        # Job-average statistics
+        avg_wait = area_list[c].customers / num_client_served[c]    # Tempo di risposta
+        avg_delay = area_list[c].queue / num_client_served[c]       # Tempo di attesa in coda
+        avg_service_time = area_list[c].service / num_client_served[c]  # Tempo di servizio
+
+        # Time-average statistics
+        avg_num_in_sys = area_list[c].customers / times.current
+        avg_num_in_queue = area_list[c].queue / times.current
+        avg_num_in_service = area_list[c].service / times.current
+
+        print("{0:8d} {1:12.8f} {2:12.8f} {3:14.8f} {4:17.8f} {5:17.8f} {6:14.8f}".format(
+            c + 1,
+            avg_wait,
+            avg_delay,
+            avg_service_time,
+            avg_num_in_sys,
+            avg_num_in_queue,
+            avg_num_in_service
+        ))
+
+    print(f"\nSimulation complete. Clients served: {num_client_served}")
+    print("num sampling: ", num_sampling)
+
+
+def update_acc_sum(service_time, id_s):
+    accumSum[id_s].service += service_time
+    accumSum[id_s].served += 1
+
+
+def save_stats(tipo):
+    """
+    Calcola e salva le statistiche finali su file CSV per ogni run.
+
+    :param tipo: Il tipo di statistica ('finito' o 'infinito') che determina il percorso dei file e il calcolo.
+    :return: None
+    """
+    csv_utilization = CSV_UTILIZATION
+    csv_delay = CSV_DELAY
+    csv_waiting_time = CSV_WAITING_TIME
+
+    if tipo == 'finite':
+        directory = DIRECTORY_FINITE_H
+    elif tipo == 'infinite':
+        directory = DIRECTORY_INFINITE_H
+    else:
+        raise ValueError("Tipo non valido. Utilizzare 'finito' o 'infinito'.")
+
+    # Nome del file CSV
+    rho_csv = directory + csv_utilization
+
+    for s in range(SERVER_NUM):
+        # Calcolo dell'utilizzo del server
+        rho = accumSum[s].service / times.current
+
+        # Scrive direttamente il valore rho nel file CSV, separando con una virgola
+        save_stats_on_file(rho_csv, f"{rho}, ")
+    # Aggiunge una nuova linea per separare le statistiche del prossimo run
+    save_stats_on_file(rho_csv, "\n")
+
+    for c in range(QUEUES_NUM):
+        if num_client_served[c] == 0:
+            continue
+
+        # Job-average statistics
+        avg_wait = area_list[c].customers / num_client_served[c]  # Tempo di risposta
+        avg_delay = area_list[c].queue / num_client_served[c]  # Tempo di attesa in coda
+
+        # Scrive direttamente i valori avg_delay e avg_wait nel file CSV, separando con una virgola
+        save_stats_on_file(directory + csv_delay, f"{avg_delay}, ")
+        save_stats_on_file(directory + csv_waiting_time, f"{avg_wait}, ")
+
+    save_stats_on_file(directory + csv_delay, "\n")
+    save_stats_on_file(directory + csv_waiting_time, "\n")
+
+    # Tempo di fine lavoro, solo per il tipo 'finite'
+    if tipo == 'finite':
+        save_stats_on_file(directory + CSV_END_WORK_TIME_FINITE, f"{times.current}\n")

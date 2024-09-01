@@ -27,8 +27,7 @@
 
 # -------------------- PARAMETRI DI CONFIGURAZIONE --------------------
 VERBOSE = True
-IMPROVED_SIM = False
-INFINITE_HORIZON = False
+IMPROVED_SIM = True
 
 #  -------------------- PARAMETRI DI SIMULAZIONE (dipendenti da parametri di configurazione) --------------------
 

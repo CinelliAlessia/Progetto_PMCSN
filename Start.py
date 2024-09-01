@@ -10,13 +10,13 @@ seed_used = [SEED]  # Lista dei seed utilizzati per ogni replica della simulazio
 # ---------------- INFINITE HORIZON SIMULATION ----------------
 INFINITE_HORIZON = True
 BATCH_DIM = 1 * 60  # Calcoliamo un Batch ogni ora
-BATCH_NUM = 800  # Numero di batch da eseguire
+BATCH_NUM = 8  # Numero di batch da eseguire
 INFINITE_HORIZON_TIME = BATCH_DIM*BATCH_NUM
 
 # ---------------- FINITE HORIZON SIMULATION ----------------
 FINITE_HORIZON = not INFINITE_HORIZON  # Se non è una simulazione ad orizzonte finito allora è ad orizzonte infinito
 FINITE_HORIZON_TIME = 4 * 60  # 4 ore di simulazione
-REPLICATION_NUM = 10000
+REPLICATION_NUM = 1
 SAMPLING_RATE = 20  # Tempo di campionamento per le statistiche
 
 
@@ -44,7 +44,7 @@ def infinite_horizon_run():
     print("Starting infinite horizon simulation, seed: ", SEED)
     CLOSE_THE_DOOR_TIME = INFINITE_HORIZON_TIME
     # Esecuzione della simulazione
-    start_simulation(CLOSE_THE_DOOR_TIME, "infinite", BATCH_DIM)
+    start_simulation(CLOSE_THE_DOOR_TIME, "infinite", BATCH_DIM, BATCH_NUM)
     seed_used.append(getSeed())
     print("Simulation ending seed: ", getSeed())
 
