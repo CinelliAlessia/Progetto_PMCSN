@@ -1,29 +1,3 @@
-import numpy as np
-# Prelievi e Versamenti -> 45% di probabilità
-    # Sportello -> 45% di probabilità
-    # ATM -> 55% di probabilità
-# Operazione Unica -> 40% di probabilità
-# Spedizione e Ritiri -> 15% di probabilità
-
-# Prenotazioni Online
-# Migliorativo - Locker pacchi, a fronte di una spesa iniziale (Pacchi grandi NO)
-
-# -------------------- Indici dei serventi --------------------
-
-MULTI_SERVER_INDEX = [0, 1, 2, 3, 4]
-SR_SERVER_INDEX = [5]
-ATM_SERVER_INDEX = [6]
-# Numero di serventi TOTALI -> 6 sportelli + Sportello Spedizione e Ritiri + 1 ATM
-SERVER_NUM = len(MULTI_SERVER_INDEX) + len(SR_SERVER_INDEX) + len(ATM_SERVER_INDEX)
-
-
-# -------------------- Indici delle code associate ai serventi --------------------
-MULTI_SERVER_QUEUES = [0, 1, 2]  # Indici delle code servite dal multiserver
-SR_SERVER_QUEUES = [3, 4, 5]  # Indici delle code servite dal server Spedizioni e ritiri
-ATM_SERVER_QUEUES = [6, 7]  # Indici delle code servite dal server ATM
-QUEUES_NUM = len(MULTI_SERVER_QUEUES) + len(SR_SERVER_QUEUES) + len(ATM_SERVER_QUEUES)  # Numero di code TOTALI
-
-
 #  Priorità (Multi server)
 # La coda # 1 è per le prenotazioni online OC
 # La coda # 2 è per le persone in difficoltà OC
@@ -37,6 +11,45 @@ QUEUES_NUM = len(MULTI_SERVER_QUEUES) + len(SR_SERVER_QUEUES) + len(ATM_SERVER_Q
 #  Priorità (Single server)
 # La coda # 7 è per il Bancomat in difficoltà
 # La coda # 8 è per il Bancomat
+# ----------------------------------------------
+# Prelievi e Versamenti -> 45% di probabilità
+    # Sportello -> 45% di probabilità
+    # ATM -> 55% di probabilità
+# Operazione Unica -> 40% di probabilità
+# Spedizione e Ritiri -> 15% di probabilità
+
+# Prenotazioni Online
+# Migliorativo - Locker pacchi, a fronte di una spesa iniziale (Pacchi grandi NO)
+
+
+# Sportello spedizioni e ritiri -> Se non ci sono persone in coda, può servire tutti
+# Locker per ritiri (+1 coda per il locker)
+
+# -------------------- PARAMETRI DI CONFIGURAZIONE --------------------
+VERBOSE = True
+IMPROVED_SIM = False
+INFINITE_HORIZON = False
+
+#  -------------------- PARAMETRI DI SIMULAZIONE (dipendenti da parametri di configurazione) --------------------
+
+# Indici dei serventi --------------------
+MULTI_SERVER_INDEX = [0, 1, 2, 3, 4]
+SR_SERVER_INDEX = [5]
+ATM_SERVER_INDEX = [6]
+
+#  Indici delle code associate ai serventi --------------------
+MULTI_SERVER_QUEUES = [0, 1, 2]  # Indici delle code servite dal multiserver
+SR_SERVER_QUEUES = [3, 4, 5]  # Indici delle code servite dal server Spedizioni e ritiri
+ATM_SERVER_QUEUES = [6, 7]  # Indici delle code servite dal server ATM
+
+SERVER_NUM = len(MULTI_SERVER_INDEX) + len(SR_SERVER_INDEX) + len(ATM_SERVER_INDEX)
+QUEUES_NUM = len(MULTI_SERVER_QUEUES) + len(SR_SERVER_QUEUES) + len(ATM_SERVER_QUEUES)  # Numero di code TOTALI
+
+if IMPROVED_SIM:
+    LOCKER_SERVER_INDEX = [7]
+    LOCKER_SERVER_QUEUES = [8]
+    SERVER_NUM += len(LOCKER_SERVER_INDEX)
+    QUEUES_NUM += len(LOCKER_SERVER_QUEUES) # Numero di code TOTALI
 
 # -------------------- Tempi di Arrivo --------------------
 
@@ -59,8 +72,11 @@ SIGMA_SR = 2 / 3        # Deviazione standard 2 minuti
 MU_ATM = 1 / 2.5    # Tempo di servizio medio 2.5 minuti PV ATM
 SIGMA_ATM = 1 / 3       # Deviazione standard 1 minuto PV ATM
 
+MU_LOCKER = 1 / 1
+SIGMA_LOCKER = 0.25 / 3
 # -------------------- Stream Index --------------------
 
+# Stream Associati agli arrivi
 CLASSIC_ONLINE_STREAM = 0
 CLASSIC_DIFF_STREAM = 1
 CLASSIC_STREAM = 2
@@ -72,9 +88,14 @@ SR_DIFF_STREAM = 4
 ATM_DIFF_STREAM = 6
 ATM_STREAM = 7
 
-CLASSIC_SERVICE_STREAM = 8
-SR_SERVICE_STREAM = 9
-ATM_SERVICE_STREAM = 10
+if IMPROVED_SIM:
+    LOCKER_STREAM = 11
+    LOCKER_SERVICE_STREAM = 12
+
+# Stream Associati ai servizi
+CLASSIC_SERVICE_STREAM = 8  # Il multiserver
+SR_SERVICE_STREAM = 9       # Il server Spedizioni e Ritiri
+ATM_SERVICE_STREAM = 10     # Lo sportello ATM
 
 # -------------------- Probabilità --------------------
 
@@ -92,7 +113,9 @@ P_SR_ON = 0.35  # Probabilità di Spedizione e Ritiri online
 P_MAX_LOSS = 0.8    # Probabilità di perdita massima
 MAX_PEOPLE = 100    # Num. di persone per cui si ha p_loss max
 
-# -------------------- CSV --------------------
+P_LOCKER = 0.5      # Probabilità che una operazione di tipo spedizione e ritiri vada al locker
+
+# -------------------- CSV FILE NAME --------------------
 DIRECTORY_FINITE_H = "./finite_horizon/"
 DIRECTORY_INFINITE_H = "./infinite_horizon/"
 
@@ -101,3 +124,4 @@ CSV_DELAY = "delay_finite.csv"       # Tempo di attesa in coda
 CSV_WAITING_TIME = "waiting_time_finite.csv"     # Tempo di risposta (Tempo di attesa + Tempo di servizio)
 
 CSV_END_WORK_TIME_FINITE = "end_work_time_finite.csv"   # Tempo di fine lavoro
+

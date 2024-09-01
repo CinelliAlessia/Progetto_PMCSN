@@ -1,6 +1,5 @@
 from Costant import *
 
-
 class Times:
     def __init__(self):
         self.current = 0  # System clock - Avanzamento del tempo solo all'occorrenza di un next event
