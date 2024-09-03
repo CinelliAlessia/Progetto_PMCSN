@@ -44,3 +44,5 @@ def plot_cumulative_means(cumulative_means, stationary_value, ylabel, title, fil
     # Save plots
     plt.savefig(f'plots/{filename}.png')
     plt.close()
+
+
