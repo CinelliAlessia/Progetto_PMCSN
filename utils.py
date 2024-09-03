@@ -53,6 +53,36 @@ def save_stats_on_file(file_csv, data):
         print(f"Errore durante la scrittura su file: {e}")
 
 
+def get_and_write_column_data(file_csv, column):
+    """
+    Estrae i dati di una colonna da un file CSV.
+    E li salva in un nuovo file chiamato con nome del file originale + _column + indice della colonna.
+
+    :param file_csv: Percorso del file CSV.
+    :param column: Indice della colonna da estrarre.
+    :return: Lista di valori della colonna.
+    """
+
+    # Utilizza il contesto 'with' per assicurare che il file venga chiuso correttamente
+    try:
+        with open(file_csv, 'r') as csv_file:
+            data = csv_file.readlines()
+            column_data = [(row.split(',')[column]) for row in data]
+    except Exception as e:
+        print(f"Errore durante la lettura del file: {e}")
+        column_data = []
+
+    # Salva i dati della colonna in un nuovo file
+    new_file = file_csv.replace('.csv', f'_column{column}.csv')
+    try:
+        with open(new_file, 'w') as csv_file:
+            for value in column_data:
+                csv_file.write(f"{value}\n")
+    except Exception as e:
+        print(f"Errore durante la scrittura su file: {e}")
+
+
+
 # ------------------------------ Funzioni per il calcolo di medie e intervalli ------------------------------
 def confidence_interval(alpha, n, l) -> float:
     sigma = np.std(l, ddof=1)
@@ -78,3 +108,22 @@ def batch_means(data, batch_size):
 def cumulative_mean(data):
     # Computes the cumulative mean for an array of data
     return np.cumsum(data) / np.arange(1, len(data) + 1)
+
+
+def format_time(total_minutes):
+    # Calculate whole hours
+    hours = int(total_minutes // 60)
+
+    # Calculate remaining minutes
+    remaining_minutes = total_minutes % 60
+
+    # Extract whole minutes from the remaining minutes
+    minutes = int(remaining_minutes)
+
+    # Calculate centiseconds (fractional part of the minute converted to hundredths of a minute)
+    centiseconds = (remaining_minutes - minutes) * 100
+
+    # Format the time as HH:MM:CC
+    formatted_time = f"{hours:02}:{minutes:02}:{centiseconds:02.0f}"
+
+    return formatted_time

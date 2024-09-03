@@ -76,9 +76,13 @@ def start_simulation(end_time, type_simulation, sampling_rate=0, batch_num=0):
 
     # ------------------ Condizione di terminazione raggiunta --------------------
     # Print delle statistiche finali
-    if VERBOSE: print_final_stats()
-    if FINITE: save_stats("finite")
-    print("end time", times.current, " ore:", times.current / 60)
+    if VERBOSE:
+        print("last completion: ", times.current, "\nTempo Totale", format_time(times.current))
+        print("num sampling: ", num_sampling)
+    print_final_stats()
+
+    if FINITE:
+        save_stats("finite")
 
 
 def get_next_event():
@@ -335,6 +339,7 @@ def generate_service_time(queue_index):
     elif queue_index in LOCKER_SERVER_QUEUES:
         selectStream(LOCKER_SERVICE_STREAM)
         return truncate_normal(1 / MU_LOCKER, SIGMA_LOCKER, 10 ** -6, float('inf'))
+        # return Exponential(1 / MU_LOCKER)
     else:
         raise ValueError('Tipo di cliente non valido')
 
@@ -376,7 +381,8 @@ def generate_sampling_event():
     """
     # Minuti
     event_list.sampling += SAMPLING_RATE_MIN
-    if event_list.sampling > CLOSE_THE_DOOR_TIME:
+
+    if FINITE and event_list.sampling > CLOSE_THE_DOOR_TIME:
         event_list.sampling = None
 
 
@@ -421,7 +427,7 @@ def calculate_p_loss():
     Calcola la probabilità di perdita in base al numero di clienti nel sistema
     :return: La probabilità di perdita
     """
-    prob = sum(num_client_in_system) / MAX_PEOPLE   #TODO: forse va normalizzata su uno
+    prob = sum(num_client_in_system) / MAX_PEOPLE   # TODO: forse va normalizzata su uno
     if prob > P_MAX_LOSS:
         return P_MAX_LOSS
     return prob
@@ -436,8 +442,11 @@ def update_tip(area_list):
     for i in range(QUEUES_NUM):
         if num_client_in_system[i] > 0:
             area_list[i].customers += (times.next - times.current) * num_client_in_system[i]
-            area_list[i].queue += (times.next - times.current) * (num_client_in_system[i] - num_client_in_service[i])
-            area_list[i].service += (times.next - times.current) # * num_client_in_service[i]
+            area_list[i].service += (times.next - times.current) * num_client_in_service[i]
+            area_list[i].queue += (times.next - times.current) * (len(queues[i]))
+            # Non usiamo num_client_in_system[i] - num_client_in_service[i] perché non è un valore attendibile
+            # nella fase di verifica del sistema
+            # area_list[i].queue += (times.next - times.current) * (num_client_in_system[i] - num_client_in_service[i])
 
 
 def print_status():
@@ -504,7 +513,6 @@ def print_final_stats():
         ))
 
     print(f"\nSimulation complete. Clients served: {num_client_served}")
-    print("num sampling: ", num_sampling)
 
 
 def update_acc_sum(service_time, id_s):
