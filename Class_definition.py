@@ -1,5 +1,6 @@
 from Costant import *
 
+
 class Times:
     def __init__(self):
         self.current = 0

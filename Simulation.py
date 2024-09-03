@@ -109,7 +109,6 @@ def get_next_event():
                 event.event_type = 'C'
                 server_index_completed = i
 
-
     # Verifico imminenza dell'evento di sampling
     if event_list.sampling is not None and event.event_time is not None:
         if event_list.sampling < event.event_time:
@@ -174,7 +173,7 @@ def process_arrival(event):
     else:
         raise ValueError('Tipo di cliente non valido')
 
-    # Se id_s_idle è libero, il cliente viene servito immediatamente
+    # Se abbiamo un server libero, il cliente viene servito immediatamente
     if id_s_idle is not None:
 
         # ---------------- Assegna il cliente al server -----------------
@@ -286,6 +285,14 @@ def generate_interarrival_time(index_type):
     :return: Il tempo di interarrivo del cliente
     """
     selectStream(index_type)
+    if IMPROVED_SIM and LOCKER:
+        if index_type == SR_DIFF_STREAM:
+            return Exponential(1 / ((1-P_LOCKER) * P_SR * P_DIFF * (1-P_ON) * LAMBDA))
+        elif index_type == SR_STREAM:
+            return Exponential(1 / ((1-P_LOCKER) * P_SR * (1 - P_DIFF) * (1-P_ON) * LAMBDA))
+        elif index_type == LOCKER_STREAM:
+            return Exponential(1 / (P_LOCKER * P_SR * (1-P_DIFF) * (1-P_ON) * LAMBDA))
+
     if index_type == CLASSIC_ONLINE_STREAM:
         return Exponential(1 / (P_OC_ON * P_ON * LAMBDA))
     elif index_type == CLASSIC_DIFF_STREAM:
@@ -295,21 +302,13 @@ def generate_interarrival_time(index_type):
     elif index_type == SR_ONLINE_STREAM:
         return Exponential(1 / (P_SR_ON * P_ON * LAMBDA))
     elif index_type == SR_DIFF_STREAM:
-        if IMPROVED_SIM:
-            return Exponential(1 / ((1-P_LOCKER) * P_SR * P_DIFF * (1-P_ON) * LAMBDA))
-        else:
-            return Exponential(1 / (P_SR * P_DIFF * (1-P_ON) * LAMBDA))
+        return Exponential(1 / (P_SR * P_DIFF * (1 - P_ON) * LAMBDA))
     elif index_type == SR_STREAM:
-        if IMPROVED_SIM:
-            return Exponential(1 / ((1-P_LOCKER) * P_SR * (1 - P_DIFF) * (1-P_ON) * LAMBDA))
-        else:
-            return Exponential(1 / (P_SR * (1 - P_DIFF) * (1-P_ON) * LAMBDA))
+        return Exponential(1 / (P_SR * (1 - P_DIFF) * (1-P_ON) * LAMBDA))
     elif index_type == ATM_DIFF_STREAM:
         return Exponential(1 / (P_ATM * P_DIFF * (1-P_ON) * LAMBDA))
     elif index_type == ATM_STREAM:
         return Exponential(1 / (P_ATM * (1 - P_DIFF) * (1-P_ON) * LAMBDA))
-    elif index_type == LOCKER_STREAM:   # SOLO IMPROVED
-        return Exponential(1 / (P_LOCKER * P_SR * (1-P_DIFF) * (1-P_ON) * LAMBDA))
     else:
         raise ValueError(f'Tipo di cliente ({index_type}) non valido in GetArrival')
 
@@ -346,6 +345,8 @@ def generate_new_arrival(queue_index):
     :param queue_index: Indice della coda per cui generare un nuovo arrivo
     :return: None
     """
+
+    # TODO
     # p_loss = calculate_p_loss()
     # if random() < p_loss:
       #  return
@@ -412,6 +413,7 @@ def server_selection_equity(servers_index):
         else:
             return i  # None -> non ha mai lavorato
     return selected_server
+
 
 # ---------------- Funzioni di supporto ----------------
 def calculate_p_loss():
