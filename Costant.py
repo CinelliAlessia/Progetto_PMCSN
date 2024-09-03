@@ -27,7 +27,8 @@
 
 # -------------------- PARAMETRI DI CONFIGURAZIONE --------------------
 VERBOSE = True
-IMPROVED_SIM = True
+IMPROVED_SIM = False
+LOCKER = False
 
 #  -------------------- PARAMETRI DI SIMULAZIONE (dipendenti da parametri di configurazione) --------------------
 
@@ -35,24 +36,24 @@ IMPROVED_SIM = True
 MULTI_SERVER_INDEX = [0, 1, 2, 3, 4]
 SR_SERVER_INDEX = [5]
 ATM_SERVER_INDEX = [6]
+LOCKER_SERVER_INDEX = [7]
 
 #  Indici delle code associate ai serventi --------------------
 MULTI_SERVER_QUEUES = [0, 1, 2]  # Indici delle code servite dal multiserver
 SR_SERVER_QUEUES = [3, 4, 5]  # Indici delle code servite dal server Spedizioni e ritiri
 ATM_SERVER_QUEUES = [6, 7]  # Indici delle code servite dal server ATM
+LOCKER_SERVER_QUEUES = [8]
 
 SERVER_NUM = len(MULTI_SERVER_INDEX) + len(SR_SERVER_INDEX) + len(ATM_SERVER_INDEX)
 QUEUES_NUM = len(MULTI_SERVER_QUEUES) + len(SR_SERVER_QUEUES) + len(ATM_SERVER_QUEUES)  # Numero di code TOTALI
 
-if IMPROVED_SIM:
-    LOCKER_SERVER_INDEX = [7]
-    LOCKER_SERVER_QUEUES = [8]
+if IMPROVED_SIM and LOCKER:
     SERVER_NUM += len(LOCKER_SERVER_INDEX)
-    QUEUES_NUM += len(LOCKER_SERVER_QUEUES) # Numero di code TOTALI
+    QUEUES_NUM += len(LOCKER_SERVER_QUEUES)     # Numero di code TOTALI
 
 # -------------------- Tempi di Arrivo --------------------
 
-LAMBDA_G = 1 / 1    # Tempo di interarrivo medio 1 minuti
+LAMBDA_G = 1 / 1.5    # Tempo di interarrivo medio 1.5 minuti
 LAMBDA_ON = 1 / 15  # Tempo di interarrivo medio 15 minuti prenotazioni Online
 
 # CALCOLO DEL TEMPO DI ARRIVO
@@ -87,23 +88,24 @@ SR_DIFF_STREAM = 4
 ATM_DIFF_STREAM = 6
 ATM_STREAM = 7
 
-if IMPROVED_SIM:
-    LOCKER_STREAM = 11
-    LOCKER_SERVICE_STREAM = 12
+LOCKER_STREAM = 8
 
 # Stream Associati ai servizi
-CLASSIC_SERVICE_STREAM = 8  # Il multiserver
-SR_SERVICE_STREAM = 9       # Il server Spedizioni e Ritiri
-ATM_SERVICE_STREAM = 10     # Lo sportello ATM
+CLASSIC_SERVICE_STREAM = 9  # I multi-server
+SR_SERVICE_STREAM = 10      # Il server Spedizioni e Ritiri
+ATM_SERVICE_STREAM = 11     # Lo sportello ATM
+
+if IMPROVED_SIM:
+    LOCKER_SERVICE_STREAM = 12  # Il locker
 
 # -------------------- Probabilità --------------------
 
 P_DIFF = 0.15  # Probabilità di persona in difficoltà
 
 # Probabilità di scelta dell'operazione
-P_OC = 0.5      # Probabilità di Operazione Classica
+P_OC = 0.45      # Probabilità di Operazione Classica
 P_ATM = 0.35    # Probabilità di ATM
-P_SR = 0.15     # Probabilità di Spedizione e Ritiri
+P_SR = 0.2     # Probabilità di Spedizione e Ritiri
 
 # Probabilità di scelta dell'operazione online
 P_OC_ON = 0.65  # Probabilità di Operazione Classica online
