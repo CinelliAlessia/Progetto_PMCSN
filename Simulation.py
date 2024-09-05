@@ -1,15 +1,19 @@
 # Algoritmo 1 slide 9 per Next-Event Simulation
+from BatchStats import Batch_Stats
 from libs.rngs import selectStream
 from libs.rvgs import Exponential
 from Class_definition import *
 from utils import *
 
+SAVE_SAMPLING = True   # Conviene che sia True solo se REPLICATION_NUM = 1
 CLOSE_THE_DOOR_TIME = 0  # Tempo di chiusura della simulazione
 FINITE = False
 INFINITE = False
 SAMPLING_RATE = 0
+BATCH_NUM = 0
 
-last_batch_time = 0
+batch_stats = Batch_Stats()
+
 
 def initialize_globals():
     global times, event_list, area_list, accumSum, servers_state, num_client_in_service, queues_num, queues, \
@@ -51,7 +55,8 @@ def start_simulation(end_time, type_simulation, sampling_rate=0, batch_num=0):
     Inizializza la simulazione e gestisce il loop principale
     :return:
     """
-    global num_sampling
+    global num_sampling, BATCH_NUM
+    BATCH_NUM = batch_num
 
     initialize_globals()
     initialize(end_time, type_simulation, sampling_rate)
@@ -63,22 +68,20 @@ def start_simulation(end_time, type_simulation, sampling_rate=0, batch_num=0):
 
     if FINITE:
         event_list.sampling = SAMPLING_RATE     # Inizializza il tempo di campionamento
-
         while times.current < CLOSE_THE_DOOR_TIME or sum(num_client_in_system) != 0:
             if VERBOSE: print_status()
             process_next_event()  # Processa l'evento più imminente
 
     elif INFINITE:
         next_job_sampling = SAMPLING_RATE
-        while num_sampling < batch_num:
-            if VERBOSE:
-                print_status()
+        while batch_stats.num_batch < batch_num:
+            if VERBOSE: print_status()
 
             process_next_event()  # Processa l'evento più imminente
             if sum(num_client_served) == next_job_sampling and sum(num_client_served) != 0:
                 next_job_sampling += SAMPLING_RATE
                 process_sampling()
-                print(f"Batch {num_sampling}/{batch_num}")
+                print(f"Batch {batch_stats.num_batch}/{batch_num}")
 
     # ------------------ Condizione di terminazione raggiunta --------------------
     # Print delle statistiche finali
@@ -87,10 +90,11 @@ def start_simulation(end_time, type_simulation, sampling_rate=0, batch_num=0):
         print("num sampling: ", num_sampling)
 
     if FINITE:
-        save_stats("finite")
+        #save_stats_finite()
         if VERBOSE: print_final_stats()
     else:
-        save_stats("infinite")
+        # save_stats_infinite()
+        pass
 
 
 def get_next_event():
@@ -153,10 +157,10 @@ def process_next_event():
         print(f"\n>>> Next Event: {event.event_type} | Client Type: {event.op_index}, "
                       f"Time: {event.event_time:.4f}")
 
-    # 3) Processa l'evento e aggiorna lo stato del sistema
+    # 2) Processa l'evento e aggiorna lo stato del sistema
     if event.event_type == 'A':  # Se l'evento è un arrivo
         process_arrival(event)  # Processa l'arrivo
-        times.last[event.op_index] = event.event_time  # TODO: times.last -> l'ultimo evento processato, giusto?
+        times.last[event.op_index] = event.event_time
         generate_new_arrival(event.op_index)  # Genera nuovo evento di arrivo
     elif event.event_type == 'C':  # Se l'evento è un completamento
         process_completion(event, server_index_completed)
@@ -168,7 +172,7 @@ def process_next_event():
 
     # 3) Aggiorna il tempo di sistema e le statistiche
     if not event.event_type == 'S':
-        update_tip(area_list)  # Aggiorna le aree di interesse TODO: giusto?
+        update_area(area_list)  # Aggiorna le aree di interesse
 
     times.current = times.next  # Aggiorno il timer di sistema
 
@@ -197,8 +201,8 @@ def process_arrival(event):
         # ---------------- Assegna il cliente al server -----------------
         service_time = generate_service_time(event.op_index)  # Genero il tempo di servizio
 
-        event_list.completed[
-            id_s_idle].event_time = event.event_time + service_time  # Aggiorno il tempo di completamento
+        # Aggiorno il tempo di completamento
+        event_list.completed[id_s_idle].event_time = event.event_time + service_time
         event_list.completed[id_s_idle].op_index = event.op_index  # Aggiorno il tipo di cliente in servizio
 
         update_acc_sum(service_time, id_s_idle)
@@ -231,6 +235,7 @@ def process_completion(event, id_server):
     num_client_in_system[event.op_index] -= 1  # Rimuovo un cliente nel sistema
     num_client_served[event.op_index] += 1  # Incremento il numero di clienti serviti
 
+    if INFINITE: batch_stats.client_served[event.op_index] += 1
     if VERBOSE: print(f"Server {id_server} completed request for client type {event.op_index}")
 
     # Seleziona il prossimo cliente da servire (se ce ne sono in coda)
@@ -246,17 +251,17 @@ def process_sampling():
     :return:
     """
 
-    global num_sampling, FINITE, INFINITE, last_batch_time
+    global num_sampling, FINITE, INFINITE
     if FINITE:
-        pass
+        num_sampling += 1
+        if SAVE_SAMPLING:
+            save_stats_finite()
+        # TODO: non salviamo statistiche per il campionamento, ma solo a fine run
     elif INFINITE:  # Campionamento per batch means
-        save_stats("infinite")
-        reset_tip(area_list)
+        save_stats_infinite()
+        reset_area(area_list)
         reset_accum_sum(accumSum)
-        last_batch_time = times.current
-
-    num_sampling += 1
-
+        batch_stats.reset_state(times.current)
     return
 
 
@@ -453,7 +458,7 @@ def calculate_p_loss():
     return prob
 
 
-def update_tip(area_list):
+def update_area(area_list):
     """
     Aggiorna le aree di interesse per il calcolo delle prestazioni
     :param area_list:
@@ -468,7 +473,8 @@ def update_tip(area_list):
             # nella fase di verifica del sistema
             # area_list[i].queue += (times.next - times.current) * (num_client_in_system[i] - num_client_in_service[i])
 
-def reset_tip(area_list):
+
+def reset_area(area_list):
     """
     Resetta le aree di interesse per il calcolo delle prestazioni
     :param area_list:
@@ -478,6 +484,12 @@ def reset_tip(area_list):
         area_list[i].customers = 0
         area_list[i].service = 0
         area_list[i].queue = 0
+
+
+def update_acc_sum(service_time, id_s):
+    accumSum[id_s].service += service_time
+    accumSum[id_s].served += 1
+
 
 def reset_accum_sum(accumSum):
     """
@@ -559,61 +571,80 @@ def print_final_stats():
     print(f"\nSimulation complete. Clients served: {num_client_served}")
 
 
-def update_acc_sum(service_time, id_s):
-    accumSum[id_s].service += service_time
-    accumSum[id_s].served += 1
-
-
-def save_stats(tipo):
+def save_stats_finite():
     """
     Calcola e salva le statistiche finali su file CSV per ogni run.
 
     :param tipo: Il tipo di statistica ('finito' o 'infinito') che determina il percorso dei file e il calcolo.
     :return: None
     """
-    csv_utilization = CSV_UTILIZATION
-    csv_delay = CSV_DELAY
-    csv_waiting_time = CSV_WAITING_TIME
-
-    if tipo == 'finite':
-        directory = DIRECTORY_FINITE_H
-    elif tipo == 'infinite':
-        directory = DIRECTORY_INFINITE_H
-    else:
-        raise ValueError("Tipo non valido. Utilizzare 'finito' o 'infinito'.")
-
-    # Nome del file CSV
-    rho_csv = directory + csv_utilization
+    directory = DIRECTORY_FINITE_H
 
     for s in range(SERVER_NUM):
         if accumSum[s].served == 0 or times.current == 0:
-            continue
-
-        # Calcolo dell'utilizzo del server
-        rho = accumSum[s].service / (times.current - last_batch_time)
+            rho = 0
+        else:
+            # Calcolo dell'utilizzo del server
+            rho = accumSum[s].service / times.current
 
         # Scrive direttamente il valore rho nel file CSV, separando con una virgola
-        save_stats_on_file(rho_csv, f"{rho}, ")
+        save_stats_on_file(directory + CSV_UTILIZATION, f"{rho}, ")
 
     for c in range(QUEUES_NUM):
         if num_client_served[c] == 0:
-            continue
-
-        # Job-average statistics
-        avg_wait = area_list[c].customers / num_client_served[c]  # Tempo di risposta
-        avg_delay = area_list[c].queue / num_client_served[c]  # Tempo di attesa in coda
+            avg_wait = 0
+            avg_delay = 0
+        else:
+            # Job-average statistics
+            avg_wait = area_list[c].customers / num_client_served[c]  # Tempo di risposta
+            avg_delay = area_list[c].queue / num_client_served[c]  # Tempo di attesa in coda
 
         # Scrive direttamente i valori avg_delay e avg_wait nel file CSV, separando con una virgola
-        save_stats_on_file(directory + csv_delay, f"{avg_delay}, ")
-        save_stats_on_file(directory + csv_waiting_time, f"{avg_wait}, ")
+        save_stats_on_file(directory + CSV_DELAY, f"{avg_delay}, ")
+        save_stats_on_file(directory + CSV_WAITING_TIME, f"{avg_wait}, ")
 
     # Aggiunge una nuova linea per separare le statistiche del prossimo run
-    save_stats_on_file(rho_csv, "\n")
-    save_stats_on_file(directory + csv_delay, "\n")
-    save_stats_on_file(directory + csv_waiting_time, "\n")
+    save_stats_on_file(directory + CSV_UTILIZATION, "\n")
+    save_stats_on_file(directory + CSV_DELAY, "\n")
+    save_stats_on_file(directory + CSV_WAITING_TIME, "\n")
 
     # Tempo di fine lavoro, solo per il tipo 'finite'
-    if tipo == 'finite':
-        save_stats_on_file(directory + CSV_END_WORK_TIME_FINITE, f"{times.current}\n")
+    save_stats_on_file(directory + CSV_END_WORK_TIME_FINITE, f"{times.current}\n")
 
 
+def save_stats_infinite():
+
+    directory = DIRECTORY_INFINITE_H
+    t = times.current - batch_stats.last_batch_time
+    for s in range(SERVER_NUM):
+        if accumSum[s].served == 0 or t == 0:
+            if t == 0:
+                print("Tempo di servizio nullo")
+            rho = 0
+        else:
+            # Calcolo dell'utilizzo del server
+            rho = accumSum[s].service / t
+
+        delimiter = ", " #if s != SERVER_NUM - 1 else ""
+        # Scrive direttamente il valore rho nel file CSV, separando con una virgola
+        save_stats_on_file(directory + CSV_UTILIZATION, f"{rho}{delimiter}")
+
+    for c in range(QUEUES_NUM):
+        if batch_stats.client_served[c] == 0:
+            avg_wait = 0
+            avg_delay = 0
+        else:
+            # Job-average statistics
+            avg_wait = area_list[c].customers / batch_stats.client_served[c]  # Tempo di risposta
+            avg_delay = area_list[c].queue / batch_stats.client_served[c]  # Tempo di attesa in coda
+
+        # Scrive direttamente i valori avg_delay e avg_wait nel file CSV
+        delimiter = ", " #if c != QUEUES_NUM - 1 else ""
+        save_stats_on_file(directory + CSV_DELAY, f"{avg_delay}{delimiter}")
+        save_stats_on_file(directory + CSV_WAITING_TIME, f"{avg_wait}{delimiter}")
+
+    if not batch_stats.num_batch == BATCH_NUM:
+        # Aggiunge una nuova linea per separare le statistiche del prossimo run
+        save_stats_on_file(directory + CSV_UTILIZATION, "\n")
+        save_stats_on_file(directory + CSV_DELAY, "\n")
+        save_stats_on_file(directory + CSV_WAITING_TIME, "\n")

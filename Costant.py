@@ -54,7 +54,7 @@ if IMPROVED_SIM and LOCKER:
 # -------------------- Tempi di Arrivo --------------------
 
 LAMBDA_G = 1 / 1.5     # Tempo di interarrivo medio 1.5 minuti (misurazione di 50 persone in 40 minuti -> 1 persona ogni 0.8 minuti)
-LAMBDA_ON = 1 / 10      # Tempo di interarrivo medio 10 minuti prenotazioni Online
+LAMBDA_ON = 1 / 10     # Tempo di interarrivo medio 10 minuti prenotazioni Online
 
 # CALCOLO DEL TEMPO DI ARRIVO
 LAMBDA = LAMBDA_G + LAMBDA_ON

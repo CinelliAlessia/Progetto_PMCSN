@@ -146,12 +146,12 @@ def single_server_abstr_priority_SER():
     return e_tq1, e_tq2, e_tq3
 
 print("ATM")
-print(single_server_abstr_priority_ATM())
+#print(single_server_abstr_priority_ATM())
 print("Spedizioni e Ritiri")
-print(single_server_abstr_priority_SER())
+#print(single_server_abstr_priority_SER())
 
 
 
 
-
+multi_server()
 
