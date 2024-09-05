@@ -1,5 +1,5 @@
 from libs.rvgs import Uniform
-from libs.rvms import idfStudent, cdfNormal, idfNormal
+from libs.rvms import idfStudent, cdfLognormal, idfLognormal
 import numpy as np
 
 # ------------------------------- Funzioni di supporto --------------------------------
@@ -18,7 +18,7 @@ def format_queues(queues):
     return formatted_queues
 
 
-def truncate_normal(mu, sigma, inf, sup):
+def truncate_lognormal(mu, sigma, inf, sup):
     """
     Tronca la distribuzione normale tra inf e sup - Lezione 28-05 (numero 31)
     :param mu:
@@ -27,10 +27,10 @@ def truncate_normal(mu, sigma, inf, sup):
     :param sup:
     :return:
     """
-    alpha = cdfNormal(mu, sigma, inf)
+    alpha = cdfLognormal(mu, sigma, inf)
     # beta = 1 - cdfNormal(mu, sigma, sup)  # Se siamo interessati a limitare la distribuzione superiormente
     u = Uniform(alpha, 1.0)
-    return idfNormal(mu, sigma, u)
+    return idfLognormal(mu, sigma, u)
 
 
 # ------------------------------ Funzioni per la scrittura su file ------------------------------

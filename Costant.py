@@ -63,8 +63,8 @@ P_ON = LAMBDA_ON / LAMBDA
 # -------------------- Tempi di Servizio --------------------
 # Base campana: μ±3σ (99.7% dei valori)
 
-MU_OC = 1 / 14      # Tempo di servizio medio 14 minuti PV Sportello
-SIGMA_OC = 8 / 3    # Deviazione standard 8 minuti PV Sportello
+MU_OC = 1 / 13      # Tempo di servizio medio 14 minuti PV Sportello
+SIGMA_OC = 5 / 3    # Deviazione standard 5 minuti PV Sportello
 
 MU_SR = 1 / 3       # Tempo di servizio medio 4.5 minuti
 SIGMA_SR = 1.5 / 3  # Deviazione standard 2 minuti

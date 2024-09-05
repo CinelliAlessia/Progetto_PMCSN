@@ -1,13 +1,13 @@
 import os
 
 from matplotlib import pyplot as plt
-from Simulation import truncate_normal
+from Simulation import truncate_lognormal
 
 
 # Esempio di utilizzo:
 def plot_truncated_normal(mu, sigma, inf, sup, n=1000):
     """Genera un grafico della distribuzione di probabilità usando la funzione truncate_normal."""
-    samples = [truncate_normal(mu, sigma, inf, sup) for _ in range(n)]
+    samples = [truncate_lognormal(mu, sigma, inf, sup) for _ in range(n)]
 
     plt.figure(figsize=(10, 6))
     plt.hist(samples, bins=50, density=True, alpha=0.6, color='g', label='Campioni')
