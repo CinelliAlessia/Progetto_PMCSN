@@ -1,5 +1,5 @@
 from libs.rvgs import Uniform
-from libs.rvms import idfStudent, cdfNormal, idfNormal
+from libs.rvms import idfStudent, cdfLognormal, idfLognormal, idfNormal, cdfNormal
 import numpy as np
 
 # ------------------------------- Funzioni di supporto --------------------------------
@@ -33,6 +33,27 @@ def truncate_normal(mu, sigma, inf, sup):
     return idfNormal(mu, sigma, u)
 
 
+def truncate_lognormal(mu, sigma, inf):
+    """
+    Tronca la distribuzione lognormale tra inf e sup.
+    Utilizza le funzioni cdfLognormal e idfLognormal.
+
+    :param mu: Media della distribuzione lognormale (riferita al logaritmo dei dati)
+    :param sigma: Deviazione standard della distribuzione lognormale (riferita al logaritmo dei dati)
+    :param inf: Valore minimo per il troncamento
+    :param sup: Valore massimo per il troncamento
+    :return: Un campione dalla distribuzione lognormale troncata
+    """
+    # Calcola la CDF della lognormale a inf e sup
+    alpha = cdfLognormal(mu, sigma, inf)
+
+    # Genera un valore uniforme tra alpha e beta
+    u = Uniform(alpha, 1)
+
+    # Inversa della CDF (quantile) per ottenere il valore lognormale troncato
+    return idfLognormal(mu, sigma, u)
+
+
 # ------------------------------ Funzioni per la scrittura su file ------------------------------
 
 
@@ -60,20 +81,24 @@ def get_and_write_column_data(file_csv, column):
 
     :param file_csv: Percorso del file CSV.
     :param column: Indice della colonna da estrarre.
-    :return: Lista di valori della colonna.
+    :return: None
     """
+    new_file = file_csv.replace('.csv', f'_column{column}.csv')
 
-    # Utilizza il contesto 'with' per assicurare che il file venga chiuso correttamente
     try:
         with open(file_csv, 'r') as csv_file:
             data = csv_file.readlines()
-            column_data = [(row.split(',')[column]) for row in data]
+            column_data = []
+            for row in data:
+                columns = row.strip().split(',')
+                if len(columns) > column:
+                    column_data.append(columns[column])
+                else:
+                    column_data.append('')  # Handle missing columns
     except Exception as e:
         print(f"Errore durante la lettura del file: {e}")
         column_data = []
 
-    # Salva i dati della colonna in un nuovo file
-    new_file = file_csv.replace('.csv', f'_column{column}.csv')
     try:
         with open(new_file, 'w') as csv_file:
             for value in column_data:
@@ -91,23 +116,6 @@ def confidence_interval(alpha, n, l) -> float:
         return (t * sigma) / np.sqrt(n - 1)
     else:
         return 0.0
-
-
-def batch_means(data, batch_size):
-    n = len(data)
-    num_batches = n // batch_size
-    batch_means = []
-
-    for i in range(num_batches):
-        batch = data[i * batch_size: (i + 1) * batch_size]
-        batch_means.append(np.mean(batch))
-
-    return batch_means
-
-
-def cumulative_mean(data):
-    # Computes the cumulative mean for an array of data
-    return np.cumsum(data) / np.arange(1, len(data) + 1)
 
 
 def format_time(total_minutes):

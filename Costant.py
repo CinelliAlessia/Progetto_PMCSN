@@ -54,7 +54,7 @@ if IMPROVED_SIM and LOCKER:
 # -------------------- Tempi di Arrivo --------------------
 
 LAMBDA_G = 1 / 1.5     # Tempo di interarrivo medio 1.5 minuti (misurazione di 50 persone in 40 minuti -> 1 persona ogni 0.8 minuti)
-LAMBDA_ON = 1 / 10      # Tempo di interarrivo medio 10 minuti prenotazioni Online
+LAMBDA_ON = 1 / 10     # Tempo di interarrivo medio 10 minuti prenotazioni Online
 
 # CALCOLO DEL TEMPO DI ARRIVO
 LAMBDA = LAMBDA_G + LAMBDA_ON
@@ -63,8 +63,8 @@ P_ON = LAMBDA_ON / LAMBDA
 # -------------------- Tempi di Servizio --------------------
 # Base campana: μ±3σ (99.7% dei valori)
 
-MU_OC = 1 / 14      # Tempo di servizio medio 14 minuti PV Sportello
-SIGMA_OC = 8 / 3    # Deviazione standard 8 minuti PV Sportello
+MU_OC = 1 / 13      # Tempo di servizio medio 14 minuti PV Sportello
+SIGMA_OC = 5 / 3    # Deviazione standard 5 minuti PV Sportello
 
 MU_SR = 1 / 3       # Tempo di servizio medio 4.5 minuti
 SIGMA_SR = 1.5 / 3  # Deviazione standard 2 minuti
