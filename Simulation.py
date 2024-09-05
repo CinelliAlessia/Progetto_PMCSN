@@ -5,12 +5,14 @@ from libs.rvgs import Exponential
 from Class_definition import *
 from utils import *
 
-SAVE_SAMPLING = True   # Conviene che sia True solo se REPLICATION_NUM = 1
 CLOSE_THE_DOOR_TIME = 0  # Tempo di chiusura della simulazione
 FINITE = False
 INFINITE = False
 SAMPLING_RATE = 0
 BATCH_NUM = 0
+
+SAVE_SAMPLING = False   # Conviene che sia True solo se REPLICATION_NUM = 1
+PRINT_SAMPLE_IN_ONE_FILE = True
 
 batch_stats = Batch_Stats()
 
@@ -90,11 +92,8 @@ def start_simulation(end_time, type_simulation, sampling_rate=0, batch_num=0):
         print("num sampling: ", num_sampling)
 
     if FINITE:
-        #save_stats_finite()
+        save_stats_finite()
         if VERBOSE: print_final_stats()
-    else:
-        # save_stats_infinite()
-        pass
 
 
 def get_next_event():
@@ -351,20 +350,20 @@ def generate_service_time(queue_index):
 
     if queue_index in MULTI_SERVER_QUEUES:
         selectStream(CLASSIC_SERVICE_STREAM)  # Stream 8 per servizi dei clienti OC
-        # return truncate_lognormal(1 / MU_OC, SIGMA_OC, 10 ** -6, float('inf'))
-        return Exponential(1 / MU_OC)
+        return truncate_normal(1 / MU_OC, SIGMA_OC, 10 ** -6, float('inf'))
+        #return Exponential(1 / MU_OC)
     elif queue_index in SR_SERVER_QUEUES:
         selectStream(SR_SERVICE_STREAM)  # Stream 9 per servizi dei clienti SR
-        # return truncate_lognormal(1 / MU_SR, SIGMA_SR, 10 ** -6, float('inf'))
-        return Exponential(1 / MU_SR)
+        return truncate_normal(1 / MU_SR, SIGMA_SR, 10 ** -6, float('inf'))
+        #return Exponential(1 / MU_SR)
     elif queue_index in ATM_SERVER_QUEUES:
         selectStream(ATM_SERVICE_STREAM)  # Stream 10 per servizi dei clienti ATM
-        # return truncate_lognormal(1 / MU_ATM, SIGMA_ATM, 10 ** -6, float('inf'))
-        return Exponential(1 / MU_ATM)
+        return truncate_normal(1 / MU_ATM, SIGMA_ATM, 10 ** -6, float('inf'))
+        #return Exponential(1 / MU_ATM)
     elif queue_index in LOCKER_SERVER_QUEUES:
         selectStream(LOCKER_SERVICE_STREAM)
-        # return truncate_lognormal(1 / MU_LOCKER, SIGMA_LOCKER, 10 ** -6, float('inf'))
-        return Exponential(1 / MU_LOCKER)
+        return truncate_normal(1 / MU_LOCKER, SIGMA_LOCKER, 10 ** -6, float('inf'))
+        #return Exponential(1 / MU_LOCKER)
     else:
         raise ValueError('Tipo di cliente non valido')
 
@@ -578,7 +577,12 @@ def save_stats_finite():
     :param tipo: Il tipo di statistica ('finito' o 'infinito') che determina il percorso dei file e il calcolo.
     :return: None
     """
+    global event_list
     directory = DIRECTORY_FINITE_H
+    if PRINT_SAMPLE_IN_ONE_FILE:
+        end_file = ''
+    else:
+        end_file = str(event_list.sampling)
 
     for s in range(SERVER_NUM):
         if accumSum[s].served == 0 or times.current == 0:
@@ -588,7 +592,7 @@ def save_stats_finite():
             rho = accumSum[s].service / times.current
 
         # Scrive direttamente il valore rho nel file CSV, separando con una virgola
-        save_stats_on_file(directory + CSV_UTILIZATION, f"{rho}, ")
+        save_stats_on_file(directory + end_file + CSV_UTILIZATION, f"{rho}, ")
 
     for c in range(QUEUES_NUM):
         if num_client_served[c] == 0:
@@ -600,16 +604,17 @@ def save_stats_finite():
             avg_delay = area_list[c].queue / num_client_served[c]  # Tempo di attesa in coda
 
         # Scrive direttamente i valori avg_delay e avg_wait nel file CSV, separando con una virgola
-        save_stats_on_file(directory + CSV_DELAY, f"{avg_delay}, ")
-        save_stats_on_file(directory + CSV_WAITING_TIME, f"{avg_wait}, ")
+        save_stats_on_file(directory + end_file + CSV_DELAY, f"{avg_delay}, ")
+        save_stats_on_file(directory + end_file + CSV_WAITING_TIME, f"{avg_wait}, ")
 
     # Aggiunge una nuova linea per separare le statistiche del prossimo run
-    save_stats_on_file(directory + CSV_UTILIZATION, "\n")
-    save_stats_on_file(directory + CSV_DELAY, "\n")
-    save_stats_on_file(directory + CSV_WAITING_TIME, "\n")
+    save_stats_on_file(directory + end_file + CSV_UTILIZATION, "\n")
+    save_stats_on_file(directory + end_file + CSV_DELAY, "\n")
+    save_stats_on_file(directory + end_file + CSV_WAITING_TIME, "\n")
 
-    # Tempo di fine lavoro, solo per il tipo 'finite'
-    save_stats_on_file(directory + CSV_END_WORK_TIME_FINITE, f"{times.current}\n")
+    if not SAVE_SAMPLING:
+        # Tempo di fine lavoro, solo per il tipo 'finite'
+        save_stats_on_file(directory + CSV_END_WORK_TIME_FINITE, f"{times.current}\n")
 
 
 def save_stats_infinite():

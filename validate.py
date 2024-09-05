@@ -5,8 +5,8 @@ def calcola_P0(rho, k):
     # Calcola la somma
     somma = 0
     for i in range(k):
-        somma += (k * rho) ** i / math.factorial(i)
-    somma += (k * rho) ** k / (math.factorial(k) * (1 - rho))
+        somma += ((k * rho) ** i) / math.factorial(i)
+    somma += ((k * rho) ** k) / (math.factorial(k) * (1 - rho))
     # Calcola P(0)
     P0 = 1 / somma
     return P0
@@ -15,9 +15,10 @@ def calcola_P0(rho, k):
 def calcola_Pq(rho, k):
     # Calcola P(0) usando la funzione esistente
     P0 = calcola_P0(rho, k)
+
     # Calcola il numeratore di P_q
-    numeratore = (k * rho) ** k / (math.factorial(k) * (1 - rho))
-    return numeratore * P0
+    P_q = ((k * rho) ** k) / (math.factorial(k) * (1 - rho))
+    return P_q * P0
 
 
 def calcola_ETQi(rho_all, Pq_all, c, k, mu):
@@ -26,10 +27,9 @@ def calcola_ETQi(rho_all, Pq_all, c, k, mu):
     E_S = 1 / (k * mu)
 
     # Calcola il numeratore e il denominatore
-    numeratore = sum(Pq_all[i] * E_S for i in range(c))
+    numeratore = (Pq_all[c-1] * E_S )#for i in range(c))
 
     denominatore_1 = 1 - sum(rho_all[i] for i in range(c-1))
-
     denominatore_2 = 1 - sum(rho_all[i] for i in range(c))
 
     # Calcola E[T_q^i]
@@ -145,13 +145,10 @@ def single_server_abstr_priority_SER():
 
     return e_tq1, e_tq2, e_tq3
 
-print("ATM")
-#print(single_server_abstr_priority_ATM())
+print("Multi Server")
+print(multi_server())
 print("Spedizioni e Ritiri")
-#print(single_server_abstr_priority_SER())
-
-
-
-
-multi_server()
+print(single_server_abstr_priority_SER())
+print("ATM")
+print(single_server_abstr_priority_ATM())
 

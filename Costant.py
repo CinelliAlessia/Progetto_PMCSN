@@ -27,8 +27,8 @@
 
 # -------------------- PARAMETRI DI CONFIGURAZIONE --------------------
 VERBOSE = False
-IMPROVED_SIM = False
-LOCKER = False
+IMPROVED_SIM = True
+LOCKER = True
 
 #  -------------------- PARAMETRI DI SIMULAZIONE (dipendenti da parametri di configurazione) --------------------
 
@@ -63,17 +63,17 @@ P_ON = LAMBDA_ON / LAMBDA
 # -------------------- Tempi di Servizio --------------------
 # Base campana: μ±3σ (99.7% dei valori)
 
-MU_OC = 1 / 13      # Tempo di servizio medio 14 minuti PV Sportello
+MU_OC = 1 / 15      # Tempo di servizio medio 15 minuti PV Sportello
 SIGMA_OC = 5 / 3    # Deviazione standard 5 minuti PV Sportello
 
-MU_SR = 1 / 3       # Tempo di servizio medio 4.5 minuti
-SIGMA_SR = 1.5 / 3  # Deviazione standard 2 minuti
+MU_SR = 1 / 4.5       # Tempo di servizio medio 4.5 minuti
+SIGMA_SR = 2 / 3  # Deviazione standard 2 minuti
 
 MU_ATM = 1 / 2.5    # Tempo di servizio medio 2.5 minuti PV ATM
 SIGMA_ATM = 1 / 3   # Deviazione standard 1 minuto PV ATM
 
 MU_LOCKER = 1 / 1       # Tempo di servizio medio 1 minuto Locker
-SIGMA_LOCKER = 0.25 / 3 # Deviazione standard 0.25 minuti Locker
+SIGMA_LOCKER = 0.5 / 3  # Deviazione standard 0.5 minuti Locker
 # -------------------- Stream Index --------------------
 
 # Stream Associati agli arrivi
