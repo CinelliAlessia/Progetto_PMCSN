@@ -11,8 +11,8 @@ INFINITE = False
 SAMPLING_RATE = 0
 BATCH_NUM = 0
 
-SAVE_SAMPLING = False   # Conviene che sia True solo se REPLICATION_NUM = 1
-PRINT_SAMPLE_IN_ONE_FILE = True
+SAVE_SAMPLING = True   # Conviene che sia True solo se REPLICATION_NUM = 1
+PRINT_SAMPLE_IN_ONE_FILE = False
 
 batch_stats = Batch_Stats()
 
@@ -92,7 +92,7 @@ def start_simulation(end_time, type_simulation, sampling_rate=0, batch_num=0):
         print("num sampling: ", num_sampling)
 
     if FINITE:
-        save_stats_finite()
+        if not SAVE_SAMPLING: save_stats_finite()
         if VERBOSE: print_final_stats()
 
 

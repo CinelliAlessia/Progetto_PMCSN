@@ -1,4 +1,6 @@
 import os
+
+import numpy as np
 from matplotlib import pyplot as plt
 from Simulation import truncate_normal
 import matplotlib.pyplot as plt
@@ -113,11 +115,11 @@ def plot_graphs(csv_file, x_label='Time', y_label='Value', title = ''):
         print(f"Errore durante la lettura del file o la creazione dei grafici: {e}")
 
 
-def one_graph_one_plot_for_file(lista_file_csv, colonna, x_label='Tempo di simulazione (minuti)', y_label='E(tq)', title='Confronto tra file'):
+def one_graph_one_plot_for_file(lista_file_csv, colonna, x_label='Tempo di simulazione (minuti)', y_label='E(tq)', title='Confronto tra file', legend = []):
     # Crea un singolo grafico per tutte le curve
     plt.figure(figsize=(10, 6))
 
-    for csv_file in lista_file_csv:
+    for i, csv_file in enumerate(lista_file_csv):
         # Leggi il file CSV
         df = pd.read_csv(csv_file)
 
@@ -133,7 +135,7 @@ def one_graph_one_plot_for_file(lista_file_csv, colonna, x_label='Tempo di simul
         asse_x = range(len(dati_colonna))
 
         # Aggiungi la linea al grafico, con etichetta basata sul nome del file
-        plt.plot(asse_x, dati_colonna, label=f'{csv_file.split("/")[-1]}: Colonna {df.columns[colonna]}')
+        plt.plot(asse_x, dati_colonna, label=f'{legend[i]}')
 
     # Configura gli assi
     plt.xlabel(x_label, fontsize=12)
@@ -141,7 +143,15 @@ def one_graph_one_plot_for_file(lista_file_csv, colonna, x_label='Tempo di simul
 
     # Mostra solo una label ogni 20 valori sull'asse x
     max_x = max(len(pd.read_csv(f)) for f in lista_file_csv)  # Trova la lunghezza massima tra i file
-    plt.xticks(ticks=range(0, max_x, 20), labels=range(0, max_x, 20))
+    # Calcolo dei tick includendo l'ultimo valore
+    ticks = np.arange(0, max_x, 20)
+
+    # Aggiungi l'ultimo tick se non è già incluso
+    if max_x % 20 != 0:
+        ticks = np.append(ticks, max_x+1)
+
+    # Imposta i tick e le etichette
+    plt.xticks(ticks=ticks, labels=ticks)
 
     # Mostra griglia per l'asse y
     plt.grid(True, axis='y', linestyle='--', alpha=0.7)
@@ -149,8 +159,8 @@ def one_graph_one_plot_for_file(lista_file_csv, colonna, x_label='Tempo di simul
     # Aggiungi un titolo unico per il grafico
     plt.title(title, fontsize=14)
 
-    # Mostra la legenda con i nomi dei file
-    plt.legend()
+    # Mostra la legenda con i parametri passati come argomento
+    plt.legend(legend)
 
     # Mostra il grafico
     plt.show()
@@ -158,10 +168,18 @@ def one_graph_one_plot_for_file(lista_file_csv, colonna, x_label='Tempo di simul
 
 # Chiamate delle funzioni
 # plot_graphs("./infinite_horizon/utilization.csv")
-#one_graph_one_plot_for_file(["finite_horizon/delay123456789.csv","finite_horizon/delay1359796324.csv","finite_horizon/delay.csv"],6, 'Tempo di simulazione (minuti)', 'E(tq)', f'Grafico della colonna 2')
+
+DIR = "finite_horizon/Lambda_orig/"
+list = [f"{DIR}123456789_S1/delay.csv",f"{DIR}1054618708_S1/delay.csv",f"{DIR}1675617763_S1/delay.csv"]
+legend = ['123456789','1054618708', '1675617763']
+
+list = ["finite_horizon/Lambda_orig/123456789_S1/delay.csv", "finite_horizon/Lambda_min/123456789_S1/delay.csv","finite_horizon/Lambda_max/123456789_S1/delay.csv" ]
+legend = ['Lambda = 1/(1.5)','Lambda = 1/3', 'Lambda = 1']
+
+one_graph_one_plot_for_file(list,2,'Tempo di simulazione (minuti)', 'E(Tq3)', 'seed = 123456789', legend)
 
 
 # Esempio di utilizzo con n = 1000
-plot_truncated_normal(mu=15, sigma=3, inf=1e-6, sup=float('inf'), n=1000)
-plot_truncated_lognormal(mu=15, sigma=3, inf=1e-6, n=1000)
+#plot_truncated_normal(mu=15, sigma=3, inf=1e-6, sup=float('inf'), n=1000)
+#plot_truncated_lognormal(mu=15, sigma=3, inf=1e-6, n=1000)
 
