@@ -11,8 +11,8 @@ INFINITE = False
 SAMPLING_RATE = 0
 BATCH_NUM = 0
 
-SAVE_SAMPLING = False   # Conviene che sia True solo se REPLICATION_NUM = 1
-PRINT_SAMPLE_IN_ONE_FILE = True
+SAVE_SAMPLING = True   # Conviene che sia True solo se REPLICATION_NUM = 1
+PRINT_SAMPLE_IN_ONE_FILE = False
 
 batch_stats = Batch_Stats()
 
@@ -121,6 +121,7 @@ def get_next_event():
                     event_list.completed[i].event_time > times.current:
                 event.event_time = event_list.completed[i].event_time
                 event.op_index = event_list.completed[i].op_index
+                event.serving_time = event_list.completed[i].serving_time
                 event.event_type = 'C'
                 server_index_completed = i
 
@@ -154,7 +155,9 @@ def process_next_event():
 
     if VERBOSE:
         print(f"\n>>> Next Event: {event.event_type} | Client Type: {event.op_index}, "
-                      f"Time: {event.event_time:.4f}")
+              f"Time: {event.event_time:.4f}")
+
+    update_area(area_list)      # Aggiorna le aree di interesse
 
     # 2) Processa l'evento e aggiorna lo stato del sistema
     if event.event_type == 'A':  # Se l'evento è un arrivo
@@ -163,17 +166,12 @@ def process_next_event():
         generate_new_arrival(event.op_index)  # Genera nuovo evento di arrivo
     elif event.event_type == 'C':  # Se l'evento è un completamento
         process_completion(event, server_index_completed)
-    elif event.event_type == 'S':  # Se l'evento è di campionamento
-        process_sampling()
-        generate_sampling_event()
-    else:
-        raise ValueError('Tipo di evento non valido')
-
-    # 3) Aggiorna il tempo di sistema e le statistiche
-    if not event.event_type == 'S':
-        update_area(area_list)  # Aggiorna le aree di interesse
 
     times.current = times.next  # Aggiorno il timer di sistema
+
+    if event.event_type == 'S':  # Se l'evento è di campionamento
+        process_sampling()
+        generate_sampling_event()
 
 
 def process_arrival(event):
@@ -202,9 +200,10 @@ def process_arrival(event):
 
         # Aggiorno il tempo di completamento
         event_list.completed[id_s_idle].event_time = event.event_time + service_time
+        event_list.completed[id_s_idle].serving_time = service_time
         event_list.completed[id_s_idle].op_index = event.op_index  # Aggiorno il tipo di cliente in servizio
 
-        update_acc_sum(service_time, id_s_idle)
+        # update_acc_sum(service_time, id_s_idle) #TODO
 
         if VERBOSE: print(f"Client served immediately by free server {id_s_idle}: "
                           f"Service completion time: {event_list.completed[id_s_idle].event_time:.4f}")
@@ -234,6 +233,7 @@ def process_completion(event, id_server):
     num_client_in_system[event.op_index] -= 1  # Rimuovo un cliente nel sistema
     num_client_served[event.op_index] += 1  # Incremento il numero di clienti serviti
 
+    update_acc_sum(event.serving_time, id_server)
     if INFINITE: batch_stats.client_served[event.op_index] += 1
     if VERBOSE: print(f"Server {id_server} completed request for client type {event.op_index}")
 
@@ -293,9 +293,10 @@ def select_client_from_queue(id_s):
             service_time = generate_service_time(next_client.op_index)  # Genero il tempo di servizio
 
             event_list.completed[id_s].event_time += service_time  # Aggiorno il tempo di completamento
+            event_list.completed[id_s].serving_time = service_time  # Aggiorno il tempo di completamento
             event_list.completed[id_s].op_index = next_client.op_index  # Aggiorno il tipo di cliente in servizio
 
-            update_acc_sum(service_time, id_s)
+             #update_acc_sum(service_time, id_s)
 
             if VERBOSE: print(f"Server {id_s} took client from queue of type {next_client.op_index}: "
                               f"Service completion time: {event_list.completed[id_s].event_time:.4f}")
@@ -528,8 +529,8 @@ def print_final_stats():
         return
 
     print(f"# job serviti: {index}")
-    print(
-        f"average interarrival time = {max(times.last) / index:6.8f}")  # Interarrival = Tempo tra due arrivi successivi
+    # Interarrival = Tempo tra due arrivi successivi
+    print(f"average interarrival time = {max(times.last) / index:6.8f}")
 
     print("    server     utilization     avg service        share\n")
     for s in range(SERVER_NUM):

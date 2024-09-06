@@ -172,12 +172,17 @@ def plot_multiple_blocks(file_list, num_sample, x_label, y_label, title, legend_
             # Aggiungi il plot per il blocco corrente e usa i nomi dalla lista legend_labels
             plt.plot(x_block, y_block, label=legend_labels[i])
 
-    # Imposta etichette e titolo
-    plt.xlabel(x_label)
-    plt.ylabel(y_label)
-    plt.title(title)
-    plt.legend()
-    plt.grid()
+        # Imposta etichette e titolo con font size più grande
+        plt.xlabel(x_label, fontsize=16)
+        plt.ylabel(y_label, fontsize=16)
+        plt.title(title, fontsize=16)
+
+        # Imposta una griglia con linee sull'asse X ogni 5 valori
+        plt.xticks(range(0, num_sample + 1, 20))  # Setta i tick ogni 5 unità sull'asse X
+        plt.grid(True, which='both', axis='x', linestyle='--', linewidth=0.7)
+
+        # Aumenta la dimensione della legenda
+        plt.legend(fontsize=14)
     # Mostra il grafico
     plt.show()
 
@@ -193,16 +198,17 @@ list = ["finite_horizon/Lambda_orig/123456789_S1/delay.csv", "finite_horizon/Lam
 legend = ['Lambda = 1/(1.5)','Lambda = 1/3', 'Lambda = 1']
 
 #one_graph_one_plot_for_file(list,2,'Tempo di simulazione (minuti)', 'E(Tq3)', 'seed = 123456789', legend)
-
-legend_labels = ['123456789', '1054618708', '1675617763', '1884610308','1677438794']  # Nomi per la legenda
-plot_multiple_blocks(
+ANDREA = False
+if ANDREA:
+    legend_labels = ['123456789', '1054618708', '1675617763', '1884610308','1677438794']  # Nomi per la legenda
+    plot_multiple_blocks(
             ["finite_horizon/delay.csv"],
             240,  # 240 righe per blocco
             'Tempo di simulazione (minuti)',  # Etichetta per asse X
-            'E(Tq5)',  # Etichetta per asse Y
-            'Analisi del transitorio',  # Titolo del grafico
+            'E(Tq3)',  # Etichetta per asse Y
+            'Tempi medi in coda per Operazione Generale (Coda 3)',  # Titolo del grafico
             legend_labels,  # Etichette per la legenda
-            y_column_index=5  # Indice della colonna da usare per Y
+            y_column_index=2  # Indice della colonna da usare per Y
         )
 
 # Esempio di utilizzo con n = 1000
@@ -298,4 +304,11 @@ def plt_mean_for_more_files(end_name_csv, index_column, dir, sampling_rate, max_
 
 PLOT_MEAN = True
 if PLOT_MEAN:
-    plt_mean_for_more_files('delay.csv', 7, 'finite_horizon/Samp_1000_8H/FF/', 20, 480)
+    plt_mean_for_more_files('delay.csv', 0, 'finite_horizon/Samp_1000_4H/FF/', 20, 240)
+    plt_mean_for_more_files('delay.csv', 1, 'finite_horizon/Samp_1000_4H/FF/', 20, 240)
+    plt_mean_for_more_files('delay.csv', 2, 'finite_horizon/Samp_1000_4H/FF/', 20, 240)
+    plt_mean_for_more_files('delay.csv', 3, 'finite_horizon/Samp_1000_4H/FF/', 20, 240)
+    plt_mean_for_more_files('delay.csv', 4, 'finite_horizon/Samp_1000_4H/FF/', 20, 240)
+    plt_mean_for_more_files('delay.csv', 5, 'finite_horizon/Samp_1000_4H/FF/', 20, 240)
+    plt_mean_for_more_files('delay.csv', 6, 'finite_horizon/Samp_1000_4H/FF/', 20, 240)
+    plt_mean_for_more_files('delay.csv', 7, 'finite_horizon/Samp_1000_4H/FF/', 20, 240)

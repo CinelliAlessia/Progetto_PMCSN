@@ -20,7 +20,7 @@ class Event:
         self.event_time = None          # Event time
         self.event_type = event_type    # Arrivo o Completamento (A o C)
         self.op_index = None            # Operation Index - Tipo di operazione - Da 0 a 7
-        # self.serving_time = None        # Tempo di servizio
+        self.serving_time = None        # Tempo di servizio
 
 
 # Struttura dati per mantenere le aree per il calcolo delle medie
