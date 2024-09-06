@@ -1,6 +1,9 @@
+from math import sqrt
+import pandas as pd
 from libs.rvgs import Uniform
 from libs.rvms import idfStudent, cdfLognormal, idfLognormal, idfNormal, cdfNormal
 import numpy as np
+import subprocess
 
 # ------------------------------- Funzioni di supporto --------------------------------
 
@@ -135,3 +138,52 @@ def format_time(total_minutes):
     formatted_time = f"{hours:02}:{minutes:02}:{centiseconds:02.0f}"
 
     return formatted_time
+
+
+def run_estimate(csv_file):
+    # Esegue il comando in shell per chiamare lo script Python estimate.py
+    try:
+        result = subprocess.run(
+            ['python3', 'libs/estimate.py', f'<', csv_file],  # Comando da eseguire
+            stdout=subprocess.PIPE,  # Cattura l'output standard
+            stderr=subprocess.PIPE,  # Cattura eventuali errori
+            text=True  # Decodifica l'output in stringhe
+        )
+
+        # Controllo se il comando ha avuto successo
+        if result.returncode == 0:
+            print(f"Comando eseguito con successo:\n{result.stdout}")
+        else:
+            print(f"Errore durante l'esecuzione:\n{result.stderr}")
+
+    except Exception as e:
+        print(f"Si è verificato un errore: {e}")
+
+
+def my_estimate(csv_file, column_index):
+    LOC = 0.95  # livello di confidenza
+    n = 0  # conta i punti dati
+    sum = 0.0
+    mean = 0.0
+
+    # Leggi il file CSV
+    df = pd.read_csv(csv_file, header=None)
+    data_column = df.iloc[:, column_index]
+
+    for data in data_column:
+        n += 1  # usa il metodo one-pass di Welford
+        diff = float(data) - mean  # per calcolare la media campionaria
+        sum += diff * diff * (n - 1.0) / n
+        mean += diff / n
+
+    stdev = sqrt(sum / n)
+
+    if n > 1:
+        u = 1.0 - 0.5 * (1.0 - LOC)  # parametro dell'intervallo
+        t = idfStudent(n - 1, u)  # valore critico di t
+        w = t * stdev / sqrt(n - 1)  # larghezza dell'intervallo
+        print("\nBasato su {0:1d} punti dati e con {1:d}% di confidenza".format(n, int(100.0 * LOC + 0.5)))
+        print("Il valore atteso è nell'intervallo {0:10.8f} +/- {1:6.8f}".format(mean, w))
+        return mean, w
+    else:
+        print("ERRORE - dati insufficienti\n")

@@ -1,13 +1,11 @@
 import os
 
 import numpy as np
-from matplotlib import pyplot as plt
 from Simulation import truncate_normal
 import matplotlib.pyplot as plt
 import pandas as pd
 import os
-
-from utils import truncate_lognormal
+from utils import get_and_write_column_data, my_estimate
 
 output_dir = "./output_plots"
 
@@ -20,29 +18,6 @@ def plot_truncated_normal(mu, sigma, inf, sup, n=1000):
     plt.hist(samples, bins=50, density=True, alpha=0.6, color='g', label='Campioni')
 
     plt.title(f'Distribuzione Normale Troncata (media={mu}, sigma={sigma})')
-    plt.xlabel('Valori')
-    plt.ylabel('Densità di probabilità')
-    plt.legend()
-    plt.grid(True)
-    plt.show()
-
-
-def plot_truncated_lognormal(mu, sigma, inf, n=10000):
-    """
-    Genera un grafico della distribuzione lognormale troncata usando la funzione truncate_lognormal.
-    :param mu: Media della distribuzione lognormale (riferita al logaritmo dei dati)
-    :param sigma: Deviazione standard della distribuzione lognormale (riferita al logaritmo dei dati)
-    :param inf: Valore minimo per il troncamento
-    :param sup: Valore massimo per il troncamento
-    :param n: Numero di campioni da generare
-    """
-    # Genera i campioni troncati
-    samples = [truncate_lognormal(mu, sigma, inf) for _ in range(n)]
-
-    plt.figure(figsize=(10, 6))
-    plt.hist(samples, bins=50, density=True, alpha=0.6, color='g', label='Campioni')
-
-    plt.title(f'Distribuzione LogNormale Troncata (media={mu}, sigma={sigma})')
     plt.xlabel('Valori')
     plt.ylabel('Densità di probabilità')
     plt.legend()
@@ -176,10 +151,100 @@ legend = ['123456789','1054618708', '1675617763']
 list = ["finite_horizon/Lambda_orig/123456789_S1/delay.csv", "finite_horizon/Lambda_min/123456789_S1/delay.csv","finite_horizon/Lambda_max/123456789_S1/delay.csv" ]
 legend = ['Lambda = 1/(1.5)','Lambda = 1/3', 'Lambda = 1']
 
-one_graph_one_plot_for_file(list,2,'Tempo di simulazione (minuti)', 'E(Tq3)', 'seed = 123456789', legend)
+#one_graph_one_plot_for_file(list,2,'Tempo di simulazione (minuti)', 'E(Tq3)', 'seed = 123456789', legend)
 
 
 # Esempio di utilizzo con n = 1000
 #plot_truncated_normal(mu=15, sigma=3, inf=1e-6, sup=float('inf'), n=1000)
 #plot_truncated_lognormal(mu=15, sigma=3, inf=1e-6, n=1000)
 
+
+def plt_end_time(file_csv, end_time, qos_max, mean_csv, conf_interval):
+    """
+    Crea un grafico dell'ultimo tempo di completamento per ogni replica.
+    :param file_csv: Il file CSV contenente i tempi di completamento.
+    :param end_time: Il tempo di completamento target.
+    :param qos_max: Il tempo massimo di completamento.
+    :param mean_csv: La media dei tempi di completamento.
+    :param conf_interval: L'intervallo di confidenza.
+    """
+    # Leggi il file CSV in un DataFrame
+    df = pd.read_csv(file_csv, header=None)
+
+    # Plotta ciascun valore letto
+    plt.figure(figsize=(10, 6))
+    plt.plot(df.index, df, label='Tempo di completamento')
+    plt.axhline(y=end_time, color='r', linestyle='--', label='End Time Target')
+    plt.axhline(y=qos_max, color='b', linestyle='--', label='Goal')
+    plt.axhline(y=mean_csv, color='g', linestyle='--', label='Mean')
+
+    # Aggiungi bande di errore per l'intervallo di confidenza
+    # plt.fill_between(df.index, mean_csv - conf_interval, mean_csv + conf_interval, color='yellow', alpha=0.5, label='Confidence Interval')
+
+    # Etichette degli assi
+    plt.xlabel('Replica')
+    plt.ylabel('Tempo di completamento')
+    plt.title('Ultimo Tempo di Completamento per Replica, n = 1000')
+    plt.legend()
+    plt.grid(True)
+    plt.show()
+
+
+PLOT_END_TIME = False
+if PLOT_END_TIME:
+    mean_FF, conf_interval_FF = my_estimate('finite_horizon/1000_F_F_4H/end_work_time_finite.csv', 0)
+    mean_TF, conf_interval_TF = my_estimate('finite_horizon/1000_T_F_4H/end_work_time_finite.csv', 0)
+    mean_TT, conf_interval_TT = my_estimate('finite_horizon/1000_T_T_4H/end_work_time_finite.csv', 0)
+
+    plt_end_time('finite_horizon/1000_F_F_4H/end_work_time_finite.csv', 240, 240+30, mean_FF, conf_interval_FF)
+    plt_end_time('finite_horizon/1000_T_F_4H/end_work_time_finite.csv', 240, 240+30, mean_TF, conf_interval_TF)
+    plt_end_time('finite_horizon/1000_T_T_4H/end_work_time_finite.csv', 240, 240+30, mean_TT, conf_interval_TT)
+
+
+def plt_mean_for_more_files(end_name_csv, index_column, dir, sampling_rate, max_rate):
+    actual_sampling = sampling_rate
+
+    data = [0]
+    conf_data = [0]
+    while actual_sampling <= max_rate:
+        current_file = str(actual_sampling)+end_name_csv
+        actual_sampling += sampling_rate
+
+        mean, conf_interval = my_estimate(dir+current_file, index_column)
+        data.append(mean)
+        conf_data.append(conf_interval)
+
+    # Plotta ciascun valore letto
+    plt.figure(figsize=(10, 6))
+
+    # Create the x values to match the length of data
+    x_values = range(0, max_rate + sampling_rate, sampling_rate)
+
+    # Ensure x_values and data have the same length
+    if len(x_values) != len(data):
+        raise ValueError(f"x and y must have same first dimension, but have shapes {len(x_values)} and {len(data)}")
+
+    # Plot each value read
+    plt.figure(figsize=(10, 6))
+    plt.plot(x_values, data, label='Media')
+    plt.errorbar(x_values, data, yerr=conf_data, fmt='o', label='Intervallo di confidenza')
+
+    # Recupera il colore della griglia
+    grid_color = plt.rcParams['grid.color']
+
+    # Aggiungi una linea orizzontale a y=0 dello stesso colore della griglia
+    plt.axhline(y=0, color=grid_color, linestyle='-')
+    # Imposta i limiti dell'asse y per includere 0
+    #plt.ylim(bottom=0)
+
+    plt.xlabel('Sampling Rate')
+    plt.ylabel('Mean')
+    plt.title('Mean for different Sampling Rate')
+    plt.legend()
+    plt.grid(True)
+    plt.show()
+
+
+PLOT_MEAN = True
+if PLOT_MEAN:
+    plt_mean_for_more_files('delay.csv', 7, 'finite_horizon/Samp_1000_8H/FF/', 20, 480)
