@@ -12,7 +12,7 @@ SAMPLING_RATE = 0
 BATCH_NUM = 0
 
 SAVE_SAMPLING = True   # Conviene che sia True solo se REPLICATION_NUM = 1
-PRINT_SAMPLE_IN_ONE_FILE = False
+PRINT_SAMPLE_IN_ONE_FILE = True
 
 batch_stats = Batch_Stats()
 
