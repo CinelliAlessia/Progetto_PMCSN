@@ -4,11 +4,11 @@ from libs.rngs import *
 from Costant import *
 
 # Parametri della simulazione
-SEED = 1161688905 #123456789 #1359796324 # 1161688905
+SEED = 123456789 #123456789 #1359796324 # 1161688905
 seed_used = [SEED]  # Lista dei seed utilizzati per ogni replica della simulazione (Per ripetibilità)
 
 # ---------------- INFINITE HORIZON SIMULATION ----------------
-INFINITE_HORIZON = True
+INFINITE_HORIZON = False
 BATCH_DIM = 512  # Campionamento ogni 512 job (b)
 BATCH_NUM = 1024  # Numero di batch da eseguire (k)
 INFINITE_HORIZON_TIME = BATCH_DIM * BATCH_NUM
@@ -16,7 +16,7 @@ INFINITE_HORIZON_TIME = BATCH_DIM * BATCH_NUM
 # ---------------- FINITE HORIZON SIMULATION ----------------
 FINITE_HORIZON = not INFINITE_HORIZON  # Se non è una simulazione ad orizzonte finito allora è ad orizzonte infinito
 FINITE_HORIZON_TIME = 8 * 60  # 4 ore di simulazione
-REPLICATION_NUM = 1
+REPLICATION_NUM = 1000
 SAMPLING_RATE = 1  # Tempo di campionamento per le statistiche
 
 def finite_horizon_run():

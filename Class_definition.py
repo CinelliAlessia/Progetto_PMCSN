@@ -26,8 +26,8 @@ class Event:
 # Struttura dati per mantenere le aree per il calcolo delle medie
 class Area:
     def __init__(self):
-        self.customers = 0  # clienti nel sistema [Area unità di misura: (total customers) * time]
-        self.queue = 0      # clienti in coda queues [Area unità di misura: (customers in queue) * time]
+        self.customers = 0  # Clienti nel sistema [Area unità di misura: (total customers) * time]
+        self.queue = 0      # Clienti in coda queues [Area unità di misura: (customers in queue) * time]
         self.service = 0    # Clienti in servizio [Area unità di misura: (customers in service) * time]
 
 
