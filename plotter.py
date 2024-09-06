@@ -1,5 +1,3 @@
-import os
-
 import numpy as np
 from Simulation import truncate_normal
 import matplotlib.pyplot as plt
@@ -50,7 +48,7 @@ def plot_cumulative_means(cumulative_means, stationary_value, ylabel, title, fil
 def plot_graphs(csv_file, x_label='Time', y_label='Value', title = ''):
     """
     Legge un file CSV e salva i grafici in funzione dell'indice di riga in una cartella specificata.
-
+    Crea un grafico per ogni colonna del file CSV
     :param title:
     :param x_label:
     :param y_label:
@@ -140,9 +138,52 @@ def one_graph_one_plot_for_file(lista_file_csv, colonna, x_label='Tempo di simul
     # Mostra il grafico
     plt.show()
 
+def plot_multiple_blocks(file_list, num_sample, x_label, y_label, title, legend_labels, y_column_index):
+    plt.figure(figsize=(10, 6))  # Inizializza un'unica figura per il grafico finale
+
+    for file_idx, file in enumerate(file_list):
+        # Carica il file CSV senza header
+        df = pd.read_csv(file, header=None)
+
+        # Stampa per controllare quante righe ha il file CSV
+        print(f"Il file {file} contiene {len(df)} righe.")
+
+        # Utilizza la colonna specificata da y_column_index per l'asse Y
+        y_values = df.iloc[:, y_column_index]  # Colonna specificata per Y
+
+        # Conta il numero di blocchi
+        num_blocks = len(df) // num_sample  # Arrotonda in alto per considerare eventuali righe rimanenti
+        print(f"Numero di blocchi per il file {file}: {num_blocks}")
+
+        # Assicurati che la lunghezza di `legend_labels` corrisponda al numero di blocchi
+        if len(legend_labels) < num_blocks:
+            raise ValueError(f"La lista dei nomi nella legenda deve contenere almeno {num_blocks} elementi, ma ne ha {len(legend_labels)}.")
+
+        # Aggiungi un plot per ogni blocco di `num_sample` righe
+        for i in range(num_blocks):
+            # Calcola gli indici per il blocco corrente
+            start_idx = i * num_sample
+            end_idx = min((i + 1) * num_sample, len(df))  # Assicura di non andare oltre l'ultima riga
+
+            # Genera l'indice per l'asse X, che deve ripartire da 0 a num_sample per ogni blocco
+            x_block = range(0, end_idx - start_idx)
+            y_block = y_values[start_idx:end_idx]
+
+            # Aggiungi il plot per il blocco corrente e usa i nomi dalla lista legend_labels
+            plt.plot(x_block, y_block, label=legend_labels[i])
+
+    # Imposta etichette e titolo
+    plt.xlabel(x_label)
+    plt.ylabel(y_label)
+    plt.title(title)
+    plt.legend()
+    plt.grid()
+    # Mostra il grafico
+    plt.show()
 
 # Chiamate delle funzioni
 # plot_graphs("./infinite_horizon/utilization.csv")
+#one_graph_one_plot_for_file(["finite_horizon/delay.csv"],2, 'Tempo di simulazione (minuti)', 'E(Tq3)', f'123456789')
 
 DIR = "finite_horizon/Lambda_orig/"
 list = [f"{DIR}123456789_S1/delay.csv",f"{DIR}1054618708_S1/delay.csv",f"{DIR}1675617763_S1/delay.csv"]
@@ -153,6 +194,16 @@ legend = ['Lambda = 1/(1.5)','Lambda = 1/3', 'Lambda = 1']
 
 #one_graph_one_plot_for_file(list,2,'Tempo di simulazione (minuti)', 'E(Tq3)', 'seed = 123456789', legend)
 
+legend_labels = ['123456789', '1054618708', '1675617763', '1884610308','1677438794']  # Nomi per la legenda
+plot_multiple_blocks(
+            ["finite_horizon/delay.csv"],
+            240,  # 240 righe per blocco
+            'Tempo di simulazione (minuti)',  # Etichetta per asse X
+            'E(Tq5)',  # Etichetta per asse Y
+            'Analisi del transitorio',  # Titolo del grafico
+            legend_labels,  # Etichette per la legenda
+            y_column_index=5  # Indice della colonna da usare per Y
+        )
 
 # Esempio di utilizzo con n = 1000
 #plot_truncated_normal(mu=15, sigma=3, inf=1e-6, sup=float('inf'), n=1000)
