@@ -44,6 +44,9 @@ def plot_cumulative_means(cumulative_means, stationary_value, ylabel, title, fil
     plt.savefig(f'plots/{filename}.png')
     plt.close()
 
+# Esempio di utilizzo con n = 1000
+#plot_truncated_normal(mu=15, sigma=3, inf=1e-6, sup=float('inf'), n=1000)
+#plot_truncated_lognormal(mu=15, sigma=3, inf=1e-6, n=1000)
 
 def plot_graphs(csv_file, x_label='Time', y_label='Value', title = ''):
     """
@@ -181,6 +184,10 @@ def plot_multiple_blocks(file_list, num_sample, x_label, y_label, title, legend_
         plt.xticks(range(0, num_sample + 1, 20))  # Setta i tick ogni 5 unità sull'asse X
         plt.grid(True, which='both', axis='x', linestyle='--', linewidth=0.7)
 
+        # Aumenta la dimensione del font dei numeri sugli assi x e y
+        plt.tick_params(axis='x', labelsize=18)
+        plt.tick_params(axis='y', labelsize=18)
+
         # Aumenta la dimensione della legenda
         plt.legend(fontsize=14)
     # Mostra il grafico
@@ -197,23 +204,21 @@ legend = ['123456789','1054618708', '1675617763']
 list = ["finite_horizon/Lambda_orig/123456789_S1/delay.csv", "finite_horizon/Lambda_min/123456789_S1/delay.csv","finite_horizon/Lambda_max/123456789_S1/delay.csv" ]
 legend = ['Lambda = 1/(1.5)','Lambda = 1/3', 'Lambda = 1']
 
-#one_graph_one_plot_for_file(list,2,'Tempo di simulazione (minuti)', 'E(Tq3)', 'seed = 123456789', legend)
+# one_graph_one_plot_for_file(list,2,'Tempo di simulazione (minuti)', 'E(Tq3)', 'seed = 123456789', legend)
 ANDREA = False
 if ANDREA:
     legend_labels = ['123456789', '1054618708', '1675617763', '1884610308','1677438794']  # Nomi per la legenda
-    plot_multiple_blocks(
-            ["finite_horizon/delay.csv"],
+    for i in range(8):
+        plot_multiple_blocks(
+            ["finite_horizon/pop_queue.csv"],
             240,  # 240 righe per blocco
             'Tempo di simulazione (minuti)',  # Etichetta per asse X
-            'E(Tq3)',  # Etichetta per asse Y
-            'Tempi medi in coda per Operazione Generale (Coda 3)',  # Titolo del grafico
+            f'E[Nq{i+1}]',  # Etichetta per asse Y
+            f'Coda {i+1}',  # Titolo del grafico
             legend_labels,  # Etichette per la legenda
-            y_column_index=2  # Indice della colonna da usare per Y
+            y_column_index=i  # Indice della colonna da usare per Y
         )
 
-# Esempio di utilizzo con n = 1000
-#plot_truncated_normal(mu=15, sigma=3, inf=1e-6, sup=float('inf'), n=1000)
-#plot_truncated_lognormal(mu=15, sigma=3, inf=1e-6, n=1000)
 
 
 def plt_end_time(file_csv, end_time, qos_max, mean_csv, conf_interval):
@@ -239,9 +244,14 @@ def plt_end_time(file_csv, end_time, qos_max, mean_csv, conf_interval):
     # plt.fill_between(df.index, mean_csv - conf_interval, mean_csv + conf_interval, color='yellow', alpha=0.5, label='Confidence Interval')
 
     # Etichette degli assi
-    plt.xlabel('Replica')
-    plt.ylabel('Tempo di completamento')
-    plt.title('Ultimo Tempo di Completamento per Replica, n = 1000')
+    plt.xlabel('Replica', fontsize=16)
+    plt.ylabel('Tempo di completamento', fontsize=16)
+
+    # Aumenta la dimensione del font dei numeri sugli assi x e y
+    plt.tick_params(axis='x', labelsize=18)
+    plt.tick_params(axis='y', labelsize=18)
+
+    plt.title('Tempo di Completamento per Replica, n = 1000', fontsize=16)
     plt.legend()
     plt.grid(True)
     plt.show()
@@ -258,7 +268,7 @@ if PLOT_END_TIME:
     plt_end_time('finite_horizon/1000_T_T_4H/end_work_time_finite.csv', 240, 240+30, mean_TT, conf_interval_TT)
 
 
-def plt_mean_for_more_files(end_name_csv, index_column, dir, sampling_rate, max_rate):
+def plt_mean_for_more_files(end_name_csv, index_column, dir, sampling_rate, max_rate, title='Mean for different Sampling Rate', ylabel='Mean'):
     actual_sampling = sampling_rate
 
     data = [0]
@@ -284,8 +294,8 @@ def plt_mean_for_more_files(end_name_csv, index_column, dir, sampling_rate, max_
     # Plot each value read
     plt.figure(figsize=(10, 6))
     plt.plot(x_values, data, label='Media')
-    plt.errorbar(x_values, data, yerr=conf_data, fmt='o', label='Intervallo di confidenza')
-
+    #plt.errorbar(x_values, data, yerr=conf_data, fmt='o', label='Intervallo di confidenza')
+    plt.fill_between(x_values, np.array(data) - np.array(conf_data), np.array(data) + np.array(conf_data), color='g', alpha=0.5, label='Intervallo di confidenza')
     # Recupera il colore della griglia
     grid_color = plt.rcParams['grid.color']
 
@@ -294,21 +304,25 @@ def plt_mean_for_more_files(end_name_csv, index_column, dir, sampling_rate, max_
     # Imposta i limiti dell'asse y per includere 0
     #plt.ylim(bottom=0)
 
-    plt.xlabel('Sampling Rate')
-    plt.ylabel('Mean')
-    plt.title('Mean for different Sampling Rate')
-    plt.legend()
+    plt.xlabel('Tempo di simulazione (minuti)', fontsize = 16)
+    plt.ylabel(ylabel, fontsize = 16)
+    plt.title(title, fontsize = 16)
+    plt.legend(fontsize = 14)
     plt.grid(True)
+
+    # Aumenta la dimensione del font dei numeri sugli assi x e y
+    plt.tick_params(axis='x', labelsize=18)
+    plt.tick_params(axis='y', labelsize=18)
+
     plt.show()
 
 
 PLOT_MEAN = True
 if PLOT_MEAN:
-    plt_mean_for_more_files('delay.csv', 0, 'finite_horizon/Samp_1000_4H/FF/', 20, 240)
-    plt_mean_for_more_files('delay.csv', 1, 'finite_horizon/Samp_1000_4H/FF/', 20, 240)
-    plt_mean_for_more_files('delay.csv', 2, 'finite_horizon/Samp_1000_4H/FF/', 20, 240)
-    plt_mean_for_more_files('delay.csv', 3, 'finite_horizon/Samp_1000_4H/FF/', 20, 240)
-    plt_mean_for_more_files('delay.csv', 4, 'finite_horizon/Samp_1000_4H/FF/', 20, 240)
-    plt_mean_for_more_files('delay.csv', 5, 'finite_horizon/Samp_1000_4H/FF/', 20, 240)
-    plt_mean_for_more_files('delay.csv', 6, 'finite_horizon/Samp_1000_4H/FF/', 20, 240)
-    plt_mean_for_more_files('delay.csv', 7, 'finite_horizon/Samp_1000_4H/FF/', 20, 240)
+    for i in range(8):
+        plt_mean_for_more_files('delay.csv', i, 'finite_horizon/Samp_1000_4H/TF_S1/', 1, 240, f'Tempo medio in coda {i+1}', f'Tempo in coda (minuti)')
+        # plt_mean_for_more_files('utilization.csv', i, 'finite_horizon/Samp_1000_4H/TF_S1/', 1, 240, f'Popolazione in coda {i+1}', 'Numero di persone')
+
+PLOT_MEAN_UTIL = False
+if PLOT_MEAN_UTIL:
+    pass

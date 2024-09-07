@@ -320,7 +320,7 @@ def generate_interarrival_time(index_type):
         elif index_type == SR_STREAM:
             return Exponential(1 / ((1 - P_LOCKER) * P_SR * (1 - P_DIFF) * (1 - P_ON) * LAMBDA))
         elif index_type == LOCKER_STREAM:
-            return Exponential(1 / (P_LOCKER * P_SR * (1 - P_DIFF) * (1 - P_ON) * LAMBDA))
+            return Exponential(1 / (P_LOCKER * P_SR * (1 - P_ON) * LAMBDA))
 
     if index_type == CLASSIC_ONLINE_STREAM:
         return Exponential(1 / (P_OC_ON * P_ON * LAMBDA))
@@ -352,19 +352,19 @@ def generate_service_time(queue_index):
     if queue_index in MULTI_SERVER_QUEUES:
         selectStream(CLASSIC_SERVICE_STREAM)  # Stream 8 per servizi dei clienti OC
         return truncate_normal(1 / MU_OC, SIGMA_OC, 10 ** -6, float('inf'))
-        #return Exponential(1 / MU_OC)
+        # return Exponential(1 / MU_OC)
     elif queue_index in SR_SERVER_QUEUES:
         selectStream(SR_SERVICE_STREAM)  # Stream 9 per servizi dei clienti SR
         return truncate_normal(1 / MU_SR, SIGMA_SR, 10 ** -6, float('inf'))
-        #return Exponential(1 / MU_SR)
+        # return Exponential(1 / MU_SR)
     elif queue_index in ATM_SERVER_QUEUES:
         selectStream(ATM_SERVICE_STREAM)  # Stream 10 per servizi dei clienti ATM
         return truncate_normal(1 / MU_ATM, SIGMA_ATM, 10 ** -6, float('inf'))
-        #return Exponential(1 / MU_ATM)
+        # return Exponential(1 / MU_ATM)
     elif queue_index in LOCKER_SERVER_QUEUES:
         selectStream(LOCKER_SERVICE_STREAM)
         return truncate_normal(1 / MU_LOCKER, SIGMA_LOCKER, 10 ** -6, float('inf'))
-        #return Exponential(1 / MU_LOCKER)
+        # return Exponential(1 / MU_LOCKER)
     else:
         raise ValueError('Tipo di cliente non valido')
 
@@ -599,19 +599,25 @@ def save_stats_finite():
         if num_client_served[c] == 0:
             avg_wait = 0
             avg_delay = 0
+            num_in_queue = 0
         else:
             # Job-average statistics
             avg_wait = area_list[c].customers / num_client_served[c]  # Tempo di risposta
             avg_delay = area_list[c].queue / num_client_served[c]  # Tempo di attesa in coda
 
+            # Time-average statistics
+            num_in_queue = area_list[c].queue / times.current
+
         # Scrive direttamente i valori avg_delay e avg_wait nel file CSV, separando con una virgola
         save_stats_on_file(directory + end_file + CSV_DELAY, f"{avg_delay}, ")
         save_stats_on_file(directory + end_file + CSV_WAITING_TIME, f"{avg_wait}, ")
+        save_stats_on_file(directory + end_file + CSV_N_QUEUE, f"{num_in_queue}, ")
 
     # Aggiunge una nuova linea per separare le statistiche del prossimo run
     save_stats_on_file(directory + end_file + CSV_UTILIZATION, "\n")
     save_stats_on_file(directory + end_file + CSV_DELAY, "\n")
     save_stats_on_file(directory + end_file + CSV_WAITING_TIME, "\n")
+    save_stats_on_file(directory + end_file + CSV_N_QUEUE, "\n")
 
     if not SAVE_SAMPLING:
         # Tempo di fine lavoro, solo per il tipo 'finite'
@@ -631,26 +637,30 @@ def save_stats_infinite():
             # Calcolo dell'utilizzo del server
             rho = accumSum[s].service / t
 
-        delimiter = ", " #if s != SERVER_NUM - 1 else ""
-        # Scrive direttamente il valore rho nel file CSV, separando con una virgola
-        save_stats_on_file(directory + CSV_UTILIZATION, f"{rho}{delimiter}")
-
     for c in range(QUEUES_NUM):
         if batch_stats.client_served[c] == 0:
             avg_wait = 0
             avg_delay = 0
+            num_in_queue = 0
         else:
             # Job-average statistics
             avg_wait = area_list[c].customers / batch_stats.client_served[c]  # Tempo di risposta
             avg_delay = area_list[c].queue / batch_stats.client_served[c]  # Tempo di attesa in coda
 
+            # Time-average statistics
+            num_in_queue = area_list[c].queue / t
+
         # Scrive direttamente i valori avg_delay e avg_wait nel file CSV
         delimiter = ", " #if c != QUEUES_NUM - 1 else ""
+        save_stats_on_file(directory + CSV_UTILIZATION, f"{rho}{delimiter}")
         save_stats_on_file(directory + CSV_DELAY, f"{avg_delay}{delimiter}")
         save_stats_on_file(directory + CSV_WAITING_TIME, f"{avg_wait}{delimiter}")
+        save_stats_on_file(directory + CSV_N_QUEUE, f"{num_in_queue}{delimiter}")
+
 
     if not batch_stats.num_batch == BATCH_NUM:
         # Aggiunge una nuova linea per separare le statistiche del prossimo run
         save_stats_on_file(directory + CSV_UTILIZATION, "\n")
         save_stats_on_file(directory + CSV_DELAY, "\n")
         save_stats_on_file(directory + CSV_WAITING_TIME, "\n")
+        save_stats_on_file(directory + CSV_N_QUEUE, "\n")

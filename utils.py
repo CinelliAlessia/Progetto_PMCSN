@@ -187,3 +187,18 @@ def my_estimate(csv_file, column_index):
         return mean, w
     else:
         print("ERRORE - dati insufficienti\n")
+
+
+# Preso un file csv, dell'utilizzazione, calcola la media dei 5 server nel multiserver, creando un nuovo file csv
+def calculate_mean_utilization(csv_file):
+    # Leggi il file CSV
+    df = pd.read_csv(csv_file, header=None)
+
+    # Calcola la media delle colonne 1, 2, 3, 4 e 5
+    mean_utilization = df.iloc[:, 1:6].mean(axis=1)
+
+    # Salva la media su un nuovo file
+    new_file = csv_file.replace('.csv', '_mean.csv')
+    mean_utilization.to_csv(new_file, index=False, header=False)
+
+    return new_file

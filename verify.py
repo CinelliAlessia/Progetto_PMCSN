@@ -145,6 +145,15 @@ def single_server_abstr_priority_SER():
 
     return e_tq1, e_tq2, e_tq3
 
+
+def single_server_locker():
+    l = LAMBDA * (1-P_ON) * P_LOCKER * P_SR
+    rho = l / MU_LOCKER
+    es = 1 / MU_LOCKER
+    etq = (rho*es)/(1-rho)
+
+    return etq
+
 print("Multi Server")
 print(multi_server())
 print("Spedizioni e Ritiri")

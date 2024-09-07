@@ -123,6 +123,7 @@ DIRECTORY_INFINITE_H = "./infinite_horizon/"
 CSV_UTILIZATION = "utilization.csv"
 CSV_DELAY = "delay.csv"       # Tempo di attesa in coda
 CSV_WAITING_TIME = "waiting_time.csv"     # Tempo di risposta (Tempo di attesa + Tempo di servizio)
+CSV_N_QUEUE = "pop_queue.csv"     # Tempo di risposta (Tempo di attesa + Tempo di servizio)
 
 CSV_END_WORK_TIME_FINITE = "end_work_time_finite.csv"   # Tempo di fine lavoro
 
