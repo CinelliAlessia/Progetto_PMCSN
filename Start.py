@@ -15,9 +15,9 @@ INFINITE_HORIZON_TIME = BATCH_DIM * BATCH_NUM
 
 # ---------------- FINITE HORIZON SIMULATION ----------------
 FINITE_HORIZON = not INFINITE_HORIZON  # Se non è una simulazione a orizzonte finito allora è a orizzonte infinito
-FINITE_HORIZON_TIME = 5 * 60  # 4 ore di simulazione
+FINITE_HORIZON_TIME = 4 * 60  # 4 ore di simulazione
 REPLICATION_NUM = 1000
-SAMPLING_RATE = 10  # Tempo di campionamento per le statistiche
+SAMPLING_RATE = 1  # Tempo di campionamento per le statistiche
 
 
 def finite_horizon_run():
