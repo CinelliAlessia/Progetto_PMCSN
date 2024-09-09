@@ -11,8 +11,8 @@ INFINITE = False
 SAMPLING_RATE = 0
 BATCH_NUM = 0
 
-SAVE_SAMPLING = True   # Conviene che sia True solo se REPLICATION_NUM = 1
-PRINT_SAMPLE_IN_ONE_FILE = False
+SAVE_SAMPLING = False   # Conviene che sia True solo se REPLICATION_NUM = 1
+PRINT_SAMPLE_IN_ONE_FILE = True
 
 batch_stats = Batch_Stats()
 
@@ -180,7 +180,9 @@ def process_arrival(event):
     :param event: Rappresenta l'evento di arrivo
     :return: None
     """
-    if event.op_index in MULTI_SERVER_QUEUES:  # Se il cliente nelle code di tipo Operazione Classica
+    if event.op_index in MULTI_SERVER_QUEUES and IMPROVED_SIM:
+        id_s_idle = server_selection_equity(MULTI_SERVER_INDEX+SR_SERVER_INDEX)  # Bisogna selezionare il server fermo da più tempo se c'è
+    elif event.op_index in MULTI_SERVER_QUEUES:  # Se il cliente nelle code di tipo Operazione Classica
         id_s_idle = server_selection_equity(
             MULTI_SERVER_INDEX)  # Bisogna selezionare il server fermo da più tempo se c'è
     elif event.op_index in SR_SERVER_QUEUES:  # Se il cliente nelle code di tipo Spedizione e Ritiri
@@ -316,8 +318,12 @@ def generate_interarrival_time(index_type):
     selectStream(index_type)
     if IMPROVED_SIM and LOCKER:
         if index_type == SR_DIFF_STREAM:
+            if  ((1 - P_LOCKER) * P_SR * P_DIFF * (1 - P_ON) * LAMBDA) == 0:
+                return float('inf')
             return Exponential(1 / ((1 - P_LOCKER) * P_SR * P_DIFF * (1 - P_ON) * LAMBDA))
         elif index_type == SR_STREAM:
+            if  ((1 - P_LOCKER) * P_SR * (1 - P_DIFF) * (1 - P_ON) * LAMBDA) == 0:
+                return float('inf')
             return Exponential(1 / ((1 - P_LOCKER) * P_SR * (1 - P_DIFF) * (1 - P_ON) * LAMBDA))
         elif index_type == LOCKER_STREAM:
             return Exponential(1 / (P_LOCKER * P_SR * (1 - P_ON) * LAMBDA))
@@ -329,6 +335,8 @@ def generate_interarrival_time(index_type):
     elif index_type == CLASSIC_STREAM:
         return Exponential(1 / (P_OC * (1 - P_DIFF) * (1 - P_ON) * LAMBDA))
     elif index_type == SR_ONLINE_STREAM:
+        if (P_SR_ON * P_ON * LAMBDA) == 0:
+            return float('inf')
         return Exponential(1 / (P_SR_ON * P_ON * LAMBDA))
     elif index_type == SR_DIFF_STREAM:
         return Exponential(1 / (P_SR * P_DIFF * (1 - P_ON) * LAMBDA))
@@ -352,19 +360,19 @@ def generate_service_time(queue_index):
     if queue_index in MULTI_SERVER_QUEUES:
         selectStream(CLASSIC_SERVICE_STREAM)  # Stream 8 per servizi dei clienti OC
         return truncate_normal(1 / MU_OC, SIGMA_OC, 10 ** -6, float('inf'))
-        # return Exponential(1 / MU_OC)
+        return Exponential(1 / MU_OC)
     elif queue_index in SR_SERVER_QUEUES:
         selectStream(SR_SERVICE_STREAM)  # Stream 9 per servizi dei clienti SR
         return truncate_normal(1 / MU_SR, SIGMA_SR, 10 ** -6, float('inf'))
-        # return Exponential(1 / MU_SR)
+        return Exponential(1 / MU_SR)
     elif queue_index in ATM_SERVER_QUEUES:
         selectStream(ATM_SERVICE_STREAM)  # Stream 10 per servizi dei clienti ATM
         return truncate_normal(1 / MU_ATM, SIGMA_ATM, 10 ** -6, float('inf'))
-        # return Exponential(1 / MU_ATM)
+        return Exponential(1 / MU_ATM)
     elif queue_index in LOCKER_SERVER_QUEUES:
         selectStream(LOCKER_SERVICE_STREAM)
         return truncate_normal(1 / MU_LOCKER, SIGMA_LOCKER, 10 ** -6, float('inf'))
-        # return Exponential(1 / MU_LOCKER)
+        return Exponential(1 / MU_LOCKER)
     else:
         raise ValueError('Tipo di cliente non valido')
 
@@ -534,6 +542,9 @@ def print_final_stats():
 
     print("    server     utilization     avg service        share\n")
     for s in range(SERVER_NUM):
+        if accumSum[s].served == 0:
+            print(f"Server {s + 1} non ha servito clienti")
+            continue
         print("{0:8d} {1:14.3f} {2:15.2f} {3:15.3f}".format(
             s + 1,
             accumSum[s].service / times.current,
