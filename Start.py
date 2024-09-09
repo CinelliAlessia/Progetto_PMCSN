@@ -1,7 +1,7 @@
 import os
 from Simulation import start_simulation
 from libs.rngs import *
-from Costant import *
+from Constant import *
 
 # Parametri della simulazione
 SEED = 123456789 #123456789 #1359796324 # 1161688905

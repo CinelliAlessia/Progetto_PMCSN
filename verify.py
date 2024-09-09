@@ -1,5 +1,5 @@
 import math
-from Costant import *
+from Constant import *
 
 def calcola_P0(rho, k):
     # Calcola la somma

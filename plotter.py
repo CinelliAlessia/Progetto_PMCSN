@@ -3,7 +3,7 @@ from Simulation import truncate_normal
 import matplotlib.pyplot as plt
 import pandas as pd
 import os
-from utils import get_and_write_column_data, my_estimate
+from utils import my_estimate
 
 output_dir = "./output_plots"
 

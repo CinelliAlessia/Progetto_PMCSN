@@ -1,4 +1,4 @@
-from Costant import *
+from Constant import *
 
 
 class Times:
