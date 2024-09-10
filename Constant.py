@@ -28,7 +28,7 @@
 # -------------------- PARAMETRI DI CONFIGURAZIONE --------------------
 VERBOSE = False
 IMPROVED_SIM = True
-LOCKER = True
+LOCKER = False
 
 #  -------------------- PARAMETRI DI SIMULAZIONE (dipendenti da parametri di configurazione) --------------------
 
