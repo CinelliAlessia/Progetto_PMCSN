@@ -58,6 +58,8 @@ def multi_server():
     rho1 = p1 * rho
     rho2 = p2 * rho
     rho3 = p3 * rho
+    # Stampa i rho
+    print(f'rho3: {rho3}, rho: {rho}')
 
     rho_all = [rho1, rho2, rho3]
 
@@ -104,6 +106,27 @@ def single_server_abstr_priority_ATM():
 
     e_tq1 = numeratore / uno_meno_rho1
     e_tq2 = numeratore / (uno_meno_rho1 * uno_meno_rho)
+
+    # Printa tutti i valori calcolati
+    print("l1: ", l1)
+    print("l2: ", l2)
+    print("lambda_tot: ", lambda_tot)
+    print("m: ", m)
+    print("mu: ", mu)
+    print("es: ", es)
+    print("es_quadro: ", es_quadro)
+    print("rho: ", rho)
+    print("p1: ", p1)
+    print("p2: ", p2)
+    print("rho1: ", rho1)
+    print("rho2: ", rho2)
+    print("rho_all: ", rho_all)
+    print("numeratore: ", numeratore)
+    print("uno_meno_rho1: ", uno_meno_rho1)
+    print("uno_meno_rho2: ", uno_meno_rho2)
+    print("uno_meno_rho: ", uno_meno_rho)
+    print("e_tq1: ", e_tq1)
+    print("e_tq2: ", e_tq2)
 
     return e_tq1, e_tq2
 

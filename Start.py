@@ -8,7 +8,7 @@ SEED = 123456789 #123456789 #1359796324 # 1161688905
 seed_used = [SEED]  # Lista dei seed utilizzati per ogni replica della simulazione (Per ripetibilità)
 
 # ---------------- INFINITE HORIZON SIMULATION ----------------
-INFINITE_HORIZON = False
+INFINITE_HORIZON = True
 BATCH_DIM = 512  # Campionamento ogni 512 job (b)
 BATCH_NUM = 1024  # Numero di batch da eseguire (k)
 INFINITE_HORIZON_TIME = BATCH_DIM * BATCH_NUM

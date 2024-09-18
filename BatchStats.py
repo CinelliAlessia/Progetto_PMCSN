@@ -12,5 +12,5 @@ class Batch_Stats:
     def reset_state(self, times):
         # Reset delle variabili di stato per la simulazione a tempo infinito
         self.num_batch += 1
-        self.last_batch_time = times
-        self.client_served = [0 for _ in range(QUEUES_NUM)]
+        # self.last_batch_time = times
+        # self.client_served = [0 for _ in range(QUEUES_NUM)]

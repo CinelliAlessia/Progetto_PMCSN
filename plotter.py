@@ -116,6 +116,10 @@ def one_graph_one_plot_for_file(lista_file_csv, colonna, x_label='Tempo di simul
         # Aggiungi un puntino per ogni valore
         plt.scatter(asse_x, dati_colonna, s=10)  # s è la dimensione del puntino
 
+    # Calcola il valore medio tramite estimate e stampa la linea orizzontale
+    mean, conf_interval = my_estimate(lista_file_csv[0], colonna)
+    plt.axhline(y=mean, color='r', linestyle='--', label='Tempo medio')
+
     # Configura gli assi
     plt.xlabel(x_label, fontsize=14)
     plt.ylabel(y_label, fontsize=14)
@@ -143,7 +147,7 @@ def one_graph_one_plot_for_file(lista_file_csv, colonna, x_label='Tempo di simul
     plt.title(title, fontsize=14)
 
     # Mostra la legenda con i parametri passati come argomento
-    plt.legend(legend)
+    plt.legend()
 
     # Mostra il grafico
     plt.show()
@@ -188,7 +192,7 @@ def plot_multiple_blocks(file_list, num_sample, x_label, y_label, title, legend_
         plt.title(title, fontsize=16)
 
         # Imposta una griglia con linee sull'asse X ogni 5 valori
-        plt.xticks(range(0, num_sample + 1, 20))  # Setta i tick ogni 5 unità sull'asse X
+        #plt.xticks(range(0, num_sample + 1, 20))  # Setta i tick ogni 5 unità sull'asse X
         plt.grid(True, which='both', axis='x', linestyle='--', linewidth=0.7)
 
         # Aumenta la dimensione del font dei numeri sugli assi x e y
@@ -214,13 +218,13 @@ legend = ['Lambda = 1/(1.5)','Lambda = 1/3', 'Lambda = 1']
 # one_graph_one_plot_for_file(list,2,'Tempo di simulazione (minuti)', 'E(Tq3)', 'seed = 123456789', legend)
 ANDREA = False
 if ANDREA:
-    legend_labels = ['123456789', '1054618708', '1675617763', '1884610308','1677438794']  # Nomi per la legenda
+    legend_labels = ['123456789','1973330299','1520093432','1856740306','1716039204']  # Nomi per la legenda
     for i in range(8):
         plot_multiple_blocks(
-            ["finite_horizon/pop_queue.csv"],
-            240,  # 240 righe per blocco
+            ["finite_horizon/delay.csv"],
+            32*60,  # 240 righe per blocco
             'Tempo di simulazione (minuti)',  # Etichetta per asse X
-            f'E[Nq{i+1}]',  # Etichetta per asse Y
+            f'E[Tq{i+1}]',  # Etichetta per asse Y
             f'Coda {i+1}',  # Titolo del grafico
             legend_labels,  # Etichette per la legenda
             y_column_index=i  # Indice della colonna da usare per Y
@@ -320,34 +324,15 @@ def plt_mean_for_more_files(end_name_csv, index_column, dir, sampling_rate, max_
 
 PLOT_MEAN = False
 if PLOT_MEAN:
-    #for i in range(9):
-    i = 2
-    plt_mean_for_more_files('delay.csv', i, 'finite_horizon/', 1000 , 600000, f'Tempo medio in coda {i+1}', f'Tempo in coda (minuti)')
+    for i in range(9):
+        plt_mean_for_more_files('delay.csv', i, 'finite_horizon/Trunc_Normal/TT_S10/', 10 , 300, f'Tempo medio in coda {i+1}', f'Tempo in coda (minuti)')
         # plt_mean_for_more_files('utilization.csv', i, 'finite_horizon/Samp_1000_4H/TF_S1/', 1, 240, f'Popolazione in coda {i+1}', 'Numero di persone')
 
-PLOT_MEAN_UTIL = False
-if PLOT_MEAN_UTIL:
-    pass
-
-INF_HORIZON = False
+INF_HORIZON = True
 if INF_HORIZON:
-    output_dir = 'infinite_horizon/512_1024_TT/'
-    one_graph_one_plot_for_file([output_dir+"delay.csv"], 2, 'Num. di Batch', 'Tempo in coda', f'Tempo medio in coda 3', ['Tempo in coda'])
-    one_graph_one_plot_for_file([output_dir+"delay.csv"], 5, 'Num. di Batch', 'Tempo in coda', 'Tempo medio in coda 6', ['Tempo in coda'])
-    one_graph_one_plot_for_file([output_dir+"delay.csv"], 7, 'Num. di Batch', 'Tempo in coda', 'Tempo medio in coda 8', ['Tempo in coda'])
-other = False
-if other:
-    one_graph_one_plot_for_file(["infinite_horizon/512_1024_FF/delay.csv"], 5, 'Num. di Batch', 'Tempo in coda', 'Tempo medio in coda 6', ['Tempo in coda'])
-    one_graph_one_plot_for_file(["infinite_horizon/512_1024_FF/delay.csv"], 7, 'Num. di Batch', 'Tempo in coda', 'Tempo medio in coda 8', ['Tempo in coda'])
-
-    one_graph_one_plot_for_file(["infinite_horizon/512_1024_TF/delay.csv"], 2, 'Num. di Batch', 'Tempo in coda', f'Tempo medio in coda 3', ['Tempo in coda'])
-    one_graph_one_plot_for_file(["infinite_horizon/512_1024_TF/delay.csv"], 5, 'Num. di Batch', 'Tempo in coda', 'Tempo medio in coda 6', ['Tempo in coda'])
-    one_graph_one_plot_for_file(["infinite_horizon/512_1024_TF/delay.csv"], 7, 'Num. di Batch', 'Tempo in coda', 'Tempo medio in coda 8', ['Tempo in coda'])
-
-    one_graph_one_plot_for_file(["infinite_horizon/512_1024_TT/delay.csv"], 2, 'Num. di Batch', 'Tempo in coda', f'Tempo medio in coda 3', ['Tempo in coda'])
-    one_graph_one_plot_for_file(["infinite_horizon/512_1024_TT/delay.csv"], 5, 'Num. di Batch', 'Tempo in coda', 'Tempo medio in coda 6', ['Tempo in coda'])
-    one_graph_one_plot_for_file(["infinite_horizon/512_1024_TT/delay.csv"], 7, 'Num. di Batch', 'Tempo in coda', 'Tempo medio in coda 8', ['Tempo in coda'])
-    one_graph_one_plot_for_file(["infinite_horizon/512_1024_TT/delay.csv"], 8, 'Num. di Batch', 'Tempo in coda', 'Tempo medio in coda 9', ['Tempo in coda'])
+    output_dir = 'infinite_horizon/'
+    for i in range(8):
+        one_graph_one_plot_for_file([output_dir + "delay.csv"], i, 'Num. di Batch', 'Tempo', f'Tempo medio in coda {i+1}',  ['Tempo in coda', 'Tempo medio'])
 
 
 def utilization_multiserver(input_csv, output_csv):
@@ -382,50 +367,19 @@ def utilization_multiserver(input_csv, output_csv):
     df[['mean']].to_csv(output_csv, index=False, header=False)
 
 
-UTILIZATION_MULTISERVER = True
+UTILIZATION_MULTISERVER = False
 if UTILIZATION_MULTISERVER:
 
-    input_csv = 'finite_horizon/Samp_1000_4H/FF_S20/240utilization.csv'
-    output_csv = 'finite_horizon/Samp_1000_4H/FF_S20/240utilizationMULTI_FF.csv'
+    input_csv = 'finite_horizon/Exp/utilization.csv'
+    output_csv = 'finite_horizon/Exp/utilizationMULTI_FF.csv'
     utilization_multiserver(input_csv, output_csv)
 
     # Utilizza la funzione my_estimate sul nuovo file CSV
     mean, conf_interval = my_estimate(output_csv, 0)
     print(f'Mean MFF: {mean}, Confidence Interval: {conf_interval}')
 
-    input_csv = 'finite_horizon/Samp_1000_4H/TF_S20/240utilization.csv'
-    output_csv = 'finite_horizon/Samp_1000_4H/TF_S20/240utilizationMULTI_TF.csv'
-    utilization_multiserver(input_csv, output_csv)
-
-    # Utilizza la funzione my_estimate sul nuovo file CSV
-    mean, conf_interval = my_estimate(output_csv, 0)
-    print(f'Mean MTF: {mean}, Confidence Interval: {conf_interval}')
-
-    input_csv = 'finite_horizon/Samp_1000_4H/TT_S20/240utilization.csv'
-    output_csv = 'finite_horizon/Samp_1000_4H/TT_S20/240utilizationMULTI_TT.csv'
-    utilization_multiserver(input_csv, output_csv)
-
-    # Utilizza la funzione my_estimate sul nuovo file CSV
-    mean, conf_interval = my_estimate(output_csv, 0)
-    print(f'Mean MTF: {mean}, Confidence Interval: {conf_interval}')
-
-    output_csv = 'finite_horizon/Samp_1000_4H/FF_S20/240utilization.csv'
+    output_csv = 'finite_horizon/Exp/utilization.csv'
     mean, conf_interval = my_estimate(output_csv, 5)
     print(f'Mean 5 FF: {mean}, Confidence Interval: {conf_interval}')
     mean, conf_interval = my_estimate(output_csv, 6)
     print(f'Mean 6 FF: {mean}, Confidence Interval: {conf_interval}')
-
-    output_csv = 'finite_horizon/Samp_1000_4H/TF_S20/240utilization.csv'
-    mean, conf_interval = my_estimate(output_csv, 5)
-    print(f'Mean 5 TF: {mean}, Confidence Interval: {conf_interval}')
-    mean, conf_interval = my_estimate(output_csv, 6)
-    print(f'Mean 6 TF: {mean}, Confidence Interval: {conf_interval}')
-
-    output_csv = 'finite_horizon/Samp_1000_4H/TT_S20/240utilization.csv'
-    # Utilizza la funzione my_estimate sul nuovo file CSV
-    mean, conf_interval = my_estimate(output_csv, 5)
-    print(f'Mean 5 TT: {mean}, Confidence Interval: {conf_interval}')
-    mean, conf_interval = my_estimate(output_csv, 6)
-    print(f'Mean 6 TT: {mean}, Confidence Interval: {conf_interval}')
-    mean, conf_interval = my_estimate(output_csv, 7)
-    print(f'Mean 7 TT: {mean}, Confidence Interval: {conf_interval}')

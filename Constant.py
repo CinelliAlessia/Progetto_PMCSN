@@ -28,7 +28,7 @@
 # -------------------- PARAMETRI DI CONFIGURAZIONE --------------------
 VERBOSE = False
 IMPROVED_SIM = True
-LOCKER = False
+LOCKER = True
 
 #  -------------------- PARAMETRI DI SIMULAZIONE (dipendenti da parametri di configurazione) --------------------
 
@@ -104,8 +104,8 @@ P_DIFF = 0.15  # Probabilità di persona in difficoltà
 
 # Probabilità di scelta dell'operazione
 P_OC = 0.45      # Probabilità di Operazione Classica
-P_ATM = 0.35    # Probabilità di ATM
 P_SR = 0.2     # Probabilità di Spedizione e Ritiri
+P_ATM = 0.35    # Probabilità di ATM
 
 # Probabilità di scelta dell'operazione online
 P_OC_ON = 0.6  # Probabilità di Operazione Classica online
